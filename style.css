@@ -511,6 +511,40 @@ body.is-muted .ico-sound-off { display: block; }
 .rack i.is-potted { opacity: 0.16; transform: scale(0.75); }
 .rack .rack-sep { width: 1px; height: 9px; background: var(--line); margin: 0 4px; }
 
+.last-call {
+  margin-top: 9px;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(201, 164, 92, 0.05), rgba(0, 0, 0, 0.12));
+  transition: border-color 0.25s, background 0.25s;
+}
+.last-call-kicker {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.last-call p {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+.last-call.is-foul {
+  border-color: rgba(212, 82, 75, 0.42);
+  background: linear-gradient(180deg, rgba(84, 22, 18, 0.28), rgba(0, 0, 0, 0.14));
+}
+.last-call.is-foul .last-call-kicker { color: var(--red); }
+.last-call.is-score {
+  border-color: rgba(67, 207, 134, 0.34);
+  background: linear-gradient(180deg, rgba(20, 73, 45, 0.24), rgba(0, 0, 0, 0.12));
+}
+.last-call.is-score .last-call-kicker { color: var(--green); }
+
 /* ── Controls ────────────────────────────────────────────── */
 .controls {
   top: 84px;
@@ -853,6 +887,7 @@ input[type="range"]::-moz-range-thumb {
 .event-banner {
   position: fixed;
   top: 38%;
+  max-width: min(82vw, 720px);
   left: 50%;
   z-index: 25;
   display: flex;
@@ -1174,6 +1209,13 @@ kbd {
   .player-meta { display: none; }
   .player-name { font-size: 9px; }
   .turn-badge { display: none !important; }
+  .scoreboard .last-call {
+    grid-column: 1 / -1;
+    margin: 6px 0 1px;
+    padding: 6px 8px 7px;
+  }
+  .scoreboard .last-call-kicker { font-size: 6.5px; margin-bottom: 2px; }
+  .scoreboard .last-call p { font-size: 9px; line-height: 1.4; }
 
   .controls {
     top: auto;

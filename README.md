@@ -28,6 +28,7 @@ You can also open `index.html` directly, though some browsers are stricter about
 - **Three mouse tools**: *Aim* to drag/click/scroll the shot line, *Scene* to orbit and zoom, and *Shot* to hold anywhere on the cloth and release to strike. One mouse does everything.
 - **Power, spin and elevation**: slider or hold-to-charge stroke meter, a draggable cue-ball contact dot for follow, screw and left/right english, and a cue elevation control for gentle jump/masse shots.
 - **A referee**: alternates reds and colours, enforces the clearance order, respots colours, detects scratches, wrong-ball first contact, misses and illegal pots, and awards 4–7 point penalties.
+- **A persistent Referee's call**: every pot, miss and foul explains **who scored or fouled, why, the penalty value, any respotted balls, whose turn it is and the score** in plain English.
 - **Two-player or AI**: the computer chooses pots by ghost-ball geometry, falls back to a safe contact, and plays with a little human error.
 - **A career book** in `localStorage`: matches, wins, highest break, centuries, total pots and frames. Export `snooker_3d_stats.json` and import it on another machine.
 - **Responsive layout**: a full desktop club-room HUD, a compact portrait layout, and a wide-angle mobile camera.
@@ -65,7 +66,13 @@ The dotted line is the cue ball's path. The wireframe sphere is the ghost ball a
 
 ## The referee
 
-The engine tracks the ball on as `red`, `colour`, or a specific clearance colour. It checks the first ball contacted by the cue ball, then the balls potted on that stroke. It handles:
+The engine tracks the ball on as `red`, `colour`, or a specific clearance colour. It checks the first ball contacted by the cue ball, then the balls potted on that stroke. Every ruling is written into the **Referee's call** panel in plain English — for example:
+
+> **Foul by Player One — blue (5) was struck first, but red was on. 5 points to Player Two (the blue is worth 5). Player Two to the table. Score 0–5.**
+
+> **1 point to Player One — red potted. Break 1; now on a colour. Player One stays at the table. Score 1–0.**
+
+It handles:
 
 - legal reds (including several reds in one stroke),
 - a colour after a red, with the colour respotted,

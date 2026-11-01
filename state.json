@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T01:15:15Z",
-    "durationSeconds": 5409.5,
-    "durationHuman": "1h 30m 10s",
+    "completedAt": "2026-11-01T01:56:19Z",
+    "durationSeconds": 7874.2,
+    "durationHuman": "2h 11m 14s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 961859,
-    "output": 158750,
-    "reasoning": 277336,
-    "cacheRead": 62620544,
+    "input": 978002,
+    "output": 177185,
+    "reasoning": 323948,
+    "cacheRead": 81874048,
     "cacheWrite": 1277,
-    "total": 1397945,
-    "totalWithCache": 64019766,
+    "total": 1479135,
+    "totalWithCache": 83354460,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -86,20 +86,31 @@
       "scene",
       "shot"
     ],
-    "sceneFramingPreserved": true
+    "sceneFramingPreserved": true,
+    "refereeCallPanel": true,
+    "refereeCallExplains": [
+      "shooter",
+      "reason",
+      "beneficiary",
+      "penalty value",
+      "respotted balls",
+      "turn",
+      "score"
+    ],
+    "ballReadability": "Saturated 60 mm balls, brighter emissive, neutral key light, darker baize, white Fresnel rim and dark contour."
   },
   "source": {
     "index.html": {
-      "bytes": 16433,
-      "lines": 302
+      "bytes": 16630,
+      "lines": 307
     },
     "style.css": {
-      "bytes": 34332,
-      "lines": 1239
+      "bytes": 35557,
+      "lines": 1281
     },
     "script.js": {
-      "bytes": 121265,
-      "lines": 3242
+      "bytes": 127082,
+      "lines": 3383
     }
   },
   "artifacts": [
@@ -150,11 +161,17 @@
       "quick click in Shot mode cancels",
       "Scene \u2192 Aim preserves the exact camera framing and shot angle",
       "Scene \u2192 Shot preserves the framing",
-      "recentre returns to cue view"
+      "recentre returns to cue view",
+      "referee call explains legal points and fouls",
+      "wrong-ball foul shows blue value and player two beneficiary",
+      "persistent Referee\u2019s call panel",
+      "wrong-ball foul shows blue value and Player Two beneficiary",
+      "persistent Referee call panel",
+      "colour contrast pass with rim, contour and neutral key light"
     ],
     "consoleErrors": 0,
     "liveDemo": "https://somphol.github.io/snooker-3d/",
-    "liveVerifiedAt": "2026-11-01T01:15:15Z",
+    "liveVerifiedAt": "2026-11-01T01:56:19Z",
     "liveConsoleErrors": 0,
     "localConsoleErrors": 0
   },

@@ -25,8 +25,8 @@
   const COLOR_ORDER = ['yellow', 'green', 'brown', 'blue', 'pink', 'black'];
   const VALUES = { red: 1, yellow: 2, green: 3, brown: 4, blue: 5, pink: 6, black: 7, cue: 0, color: 0 };
   const BALL_HEX = {
-    red: 0xd0352f, yellow: 0xf2cd36, green: 0x1e9b5b, brown: 0x814925,
-    blue: 0x2c5fe0, pink: 0xf09ab2, black: 0x2d2d2d, cue: 0xfaf5e8
+    red: 0xef3b34, yellow: 0xffd93d, green: 0x0fbf6b, brown: 0xb8622e,
+    blue: 0x2f6bff, pink: 0xff4f93, black: 0x373737, cue: 0xfffdf6
   };
   const BALL_NAMES = {
     red: 'Red', yellow: 'Yellow', green: 'Green', brown: 'Brown',
@@ -179,6 +179,8 @@
     redsLeft: $('reds-left'),
     pointsLeft: $('points-left'),
     rack: $('rack'),
+    lastCall: $('last-call'),
+    lastCallText: $('last-call-text'),
     aimReadout: $('aim-readout'),
     aimHint: $('aim-hint'),
     lockAimBtn: $('btn-lock-aim'),
@@ -548,6 +550,12 @@
     const back = new THREE.PointLight(0x7c9dff, 0.18, 7, 1.8);
     back.position.set(-2.4, 1.4, -2.8);
     scene.add(back);
+    // Neutral key so the ball colours stay true instead of taking the warm
+    // room cast; it also gives every sphere a clean white specular edge.
+    const neutral = new THREE.DirectionalLight(0xffffff, 0.28);
+    neutral.position.set(1.4, 3.0, 2.6);
+    neutral.castShadow = false;
+    scene.add(neutral);
   }
 
   /* ── Room ─────────────────────────────────────────────────────────────── */
@@ -690,8 +698,8 @@
   function buildTable() {
     const wood = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.5, metalness: 0.08, color: 0xd8b8a8 });
     const woodDark = new THREE.MeshStandardMaterial({ map: woodTex, color: 0x8f6b5b, roughness: 0.62, metalness: 0.05 });
-    const cloth = new THREE.MeshStandardMaterial({ map: clothTex, roughness: 0.94, metalness: 0.0, color: 0xc6ebd6 });
-    const cushionMat = new THREE.MeshStandardMaterial({ map: clothTex, color: 0xa9d6bb, roughness: 0.96 });
+    const cloth = new THREE.MeshStandardMaterial({ map: clothTex, roughness: 0.94, metalness: 0.0, color: 0xaed8be });
+    const cushionMat = new THREE.MeshStandardMaterial({ map: clothTex, color: 0x92c4a6, roughness: 0.96 });
     const brass = new THREE.MeshStandardMaterial({ color: 0xc9a45c, metalness: 0.88, roughness: 0.28 });
     const darkMetal = new THREE.MeshStandardMaterial({ color: 0x1b1410, metalness: 0.6, roughness: 0.5 });
 
@@ -1011,11 +1019,19 @@
     buildBalls();
   }
 
+  const ballOutlineGeo = new THREE.SphereGeometry(R * 1.045, 28, 20);
+  const ballOutlineMat = new THREE.MeshBasicMaterial({
+    color: 0x06140c,
+    side: THREE.BackSide,
+    transparent: true,
+    opacity: 0.45,
+    depthWrite: false
+  });
   const ballRimGeo = new THREE.SphereGeometry(R * 1.025, 28, 20);
   const ballRimMat = new THREE.ShaderMaterial({
     uniforms: {
-      uColor: { value: new THREE.Color(0xffe4b3) },
-      uStrength: { value: 0.58 }
+      uColor: { value: new THREE.Color(0xffffff) },
+      uStrength: { value: 0.72 }
     },
     vertexShader: `
       varying vec3 vN;
@@ -1052,8 +1068,8 @@
       metalness: 0.02,
       clearcoat: 1,
       clearcoatRoughness: 0.05,
-      emissive: new THREE.Color(color).multiplyScalar(0.055),
-      emissiveIntensity: 0.7,
+      emissive: new THREE.Color(color).multiplyScalar(0.16),
+      emissiveIntensity: 0.9,
       envMapIntensity: 0.9
     });
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(R, 36, 26), material);
@@ -1062,6 +1078,9 @@
     mesh.position.set(x, R + 0.0008, z);
     // Warm Fresnel rim: keeps the black and dark colours readable against
     // the baize without turning the balls into glowing ornaments.
+    const outline = new THREE.Mesh(ballOutlineGeo, ballOutlineMat);
+    outline.renderOrder = 1;
+    mesh.add(outline);
     const rim = new THREE.Mesh(ballRimGeo, ballRimMat);
     rim.renderOrder = 2;
     mesh.add(rim);
@@ -2095,6 +2114,126 @@
     return maxV < 0.024 && maxW < 3.2;
   }
 
+  function ballOnLabel(on) {
+    if (on === 'red') return 'red';
+    if (on === 'color') return 'a colour';
+    if (on && BALL_NAMES[on]) return BALL_NAMES[on].toLowerCase();
+    return 'the black';
+  }
+
+  function ballList(types) {
+    const counts = new Map();
+    types.forEach((t) => counts.set(t, (counts.get(t) || 0) + 1));
+    return [...counts.entries()].map(([t, n]) => {
+      const name = (BALL_NAMES[t] || t).toLowerCase();
+      return n > 1 ? `${n} ${name}s` : name;
+    }).join(' and ');
+  }
+
+  function setLastCall(text, kind) {
+    if (!dom.lastCallText) return;
+    dom.lastCallText.textContent = text;
+    if (dom.lastCall) {
+      dom.lastCall.className = 'last-call' + (kind ? ' is-' + kind : '');
+    }
+  }
+
+  /**
+   * Turn a referee result into plain language: who scored or fouled, why,
+   * how many points changed hands and what happens next.
+   */
+  function describeRuling(result, shot, onBefore, shooter) {
+    const potted = (shot.potted || []).filter((b) => b.type !== 'cue');
+    const pottedTypes = potted.map((b) => b.type);
+    const pottedList = ballList(pottedTypes);
+    const firstType = shot.firstContact ? shot.firstContact.type : null;
+    const shooterName = playerName(shooter);
+    const beneficiary = playerName(rules.current);
+    const score = `${rules.scores[0]}–${rules.scores[1]}`;
+    const onNow = ballOnLabel(rules.ballOn);
+
+    if (result.foul) {
+      let reason;
+      switch (result.reason) {
+        case 'Wrong ball first':
+          reason = `${(BALL_NAMES[firstType] || 'the ball').toLowerCase()} (${VALUES[firstType] || 4}) was struck first, but ${ballOnLabel(onBefore)} was on`;
+          break;
+        case 'No ball struck':
+          reason = 'no ball was struck';
+          break;
+        case 'Cue ball potted':
+          reason = 'the cue ball was potted';
+          break;
+        case 'Colour potted when a red was on':
+          reason = `${pottedList} potted while red was on`;
+          break;
+        case 'Red potted when a colour was on':
+          reason = `a red was potted while ${ballOnLabel(onBefore)} was on`;
+          break;
+        case 'More than one colour potted':
+          reason = `${pottedList} were potted in one stroke`;
+          break;
+        case 'Red potted during the clearance':
+          reason = 'a red was potted during the clearance';
+          break;
+        case 'Wrong colour potted':
+          reason = `${pottedList} was potted, but ${ballOnLabel(onBefore)} was on`;
+          break;
+        default:
+          reason = result.reason || 'a foul';
+      }
+      if (pottedTypes.length && ['Wrong ball first', 'No ball struck', 'Cue ball potted'].includes(result.reason)) {
+        reason += `; ${pottedList} ${pottedTypes.length > 1 ? 'were' : 'was'} potted`;
+      }
+
+      const involved = [];
+      if (onBefore && COLOR_ORDER.includes(onBefore)) involved.push(onBefore);
+      if (firstType) involved.push(firstType);
+      pottedTypes.forEach((t) => involved.push(t));
+      const top = involved
+        .filter((t) => t !== 'cue')
+        .sort((a, b) => (VALUES[b] || 0) - (VALUES[a] || 0))[0];
+      const penaltyWhy = result.penalty > 4 && top
+        ? `the ${(BALL_NAMES[top] || top).toLowerCase()} is worth ${result.penalty}`
+        : 'minimum penalty';
+
+      const restore = [];
+      if (result.respot && result.respot.length) {
+        restore.push(`${ballList(result.respot.map((b) => b.type))} respotted`);
+      }
+      if (result.cuePotted) restore.push('cue ball respotted in the D');
+      const restoreText = restore.length
+        ? `${restore.join('; ').replace(/^./, (c) => c.toUpperCase())}. `
+        : '';
+
+      const long = `Foul by ${shooterName} — ${reason}. ${result.penalty} points to ${beneficiary} (${penaltyWhy}). ${restoreText}${beneficiary} to the table. Score ${score}.`;
+      const short = `Foul by ${shooterName} — ${reason}. ${result.penalty} to ${beneficiary}.`;
+      return {
+        kind: 'foul', long, short,
+        bannerKicker: `Foul · ${shooterName}`,
+        bannerTitle: `${result.penalty} points`,
+        bannerSub: `to ${beneficiary} — ${reason}`
+      };
+    }
+
+    if (result.turnPassed) {
+      const brk = result.endedBreak > 0 ? `Break of ${result.endedBreak} ends. ` : '';
+      const long = `No pot — ${brk}${playerName(rules.current)} to the table. Ball on ${onNow}. Score ${score}.`;
+      const short = `No pot — ${brk}${playerName(rules.current)} to the table.`;
+      return { kind: 'info', long, short };
+    }
+
+    const detail = onBefore === 'red'
+      ? `${pottedList} potted`
+      : onBefore === 'color'
+        ? `${pottedList} potted and respotted`
+        : `${pottedList} potted`;
+    const pts = `${result.points} ${result.points === 1 ? 'point' : 'points'}`;
+    const long = `${pts} to ${shooterName} — ${detail}. Break ${rules.break}; now on ${onNow}. ${shooterName} stays at the table. Score ${score}.`;
+    const short = `${pts} to ${shooterName} — ${detail}. Break ${rules.break}.`;
+    return { kind: 'score', long, short };
+  }
+
   function endShot() {
     if (app.phase !== 'rolling' && app.phase !== 'settling') return;
     if (!app.shot) return;
@@ -2107,6 +2246,8 @@
       b.body.angularVelocity.set(0, 0, 0);
     });
 
+    const shooter = rules.current;
+    const onBefore = rules.ballOn;
     const result = resolveShot(app.shot);
     const shot = app.shot;
 
@@ -2114,30 +2255,25 @@
     result.respot.forEach((b) => respotBall(b));
     if (shot.cuePotted) respotCueBall();
 
+    const call = describeRuling(result, shot, onBefore, shooter);
+    setLastCall(call.long, call.kind);
+
     if (result.points > 0) {
       stats.totalPots += shot.potted.filter((b) => b.type !== 'cue').length;
       saveStats();
-      const pottedBall = shot.potted.find((b) => b.type !== 'cue');
-      const label = pottedBall ? BALL_NAMES[pottedBall.type] : 'Ball';
-      const n = shot.potted.filter((b) => b.type !== 'cue').length;
-      if (result.points >= 2 || n > 1) {
-        toast(`${result.points} ${result.points === 1 ? 'point' : 'points'} · ${label}${n > 1 ? ' ×' + n : ''} potted`, 'success', 'Potted');
-      }
     }
 
     if (result.foul) {
       Audio.foul();
       flashTurn();
-      toast(`${result.reason} — ${result.penalty} points to ${playerName(rules.current)}`, 'foul', 'Foul');
-      banner('Foul', `${result.penalty} points`, `to ${playerName(rules.current)}`);
+      toast(call.short, 'foul', 'Foul');
+      banner(call.bannerKicker, call.bannerTitle, call.bannerSub);
       app.shake = 0.35;
     } else if (result.turnPassed) {
-      if (result.endedBreak >= 4) toast(`Break of ${result.endedBreak} ends`, 'info', 'Referee');
       Audio.turn();
-    }
-
-    if (result.endedBreak >= 4 && !result.foul && !result.turnPassed) {
-      // still at the table; keep the break quiet unless it is a milestone
+      toast(call.short, 'info', result.endedBreak > 0 ? 'Break ends' : 'Referee');
+    } else if (result.points > 0) {
+      toast(call.short, 'success', 'Points');
     }
 
     if (rules.break >= 100 && app.centuryThisBreak && result.points > 0) {
@@ -2160,6 +2296,7 @@
         rules.current = 1 - rules.current;
         rules.ballOn = 'black';
         rules.frameOver = false;
+        setLastCall(`Scores level — the black is respotted. ${playerName(rules.current)} to play it. Score ${rules.scores[0]}–${rules.scores[1]}.`, 'info');
         toast('Scores level — the black is respotted', 'info', 'Tie-break');
         updateUI();
       } else {
@@ -2288,6 +2425,7 @@
     updateUI();
     Audio.win();
     const name = winner === 0 ? 'Player One' : (app.mode === 'ai' ? 'The Computer' : 'Player Two');
+    setLastCall(`${name} wins the frame ${rules.scores[0]}–${rules.scores[1]} · highest break ${app.frameHigh}.`, 'score');
     dom.resultTitle.textContent = `${name} wins the frame`;
     dom.resultScore.textContent = `${rules.scores[0]} — ${rules.scores[1]}`;
     dom.resultDetail.textContent = `Frame ${app.frameNo} · highest break ${app.frameHigh}`;
@@ -2466,6 +2604,7 @@
 
     const startPlayer = count ? 1 - app.breakOff : 0;
     resetRules(startPlayer);
+    setLastCall(`${playerName(rules.current)} to break · red on.`, 'info');
     if (count) {
       app.frameNo = (app.frameNo || 1) + 1;
       stats.framesPlayed++;
@@ -2575,6 +2714,7 @@
       for (let i = 0; i < 15; i++) {
         const i2 = document.createElement('i');
         i2.style.setProperty('--ball', '#b32320');
+        i2.title = 'Red';
         i2.dataset.type = 'red';
         i2.dataset.index = String(i);
         dom.rack.appendChild(i2);
@@ -2585,6 +2725,7 @@
       COLOR_ORDER.forEach((t) => {
         const i2 = document.createElement('i');
         i2.style.setProperty('--ball', '#' + BALL_HEX[t].toString(16).padStart(6, '0'));
+        i2.title = BALL_NAMES[t];
         i2.dataset.type = t;
         dom.rack.appendChild(i2);
       });

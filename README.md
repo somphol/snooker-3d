@@ -25,7 +25,7 @@ You can also open `index.html` directly, though some browsers are stricter about
 - **All 22 balls**: cue ball, 15 reds racked in a triangle, and yellow, green, brown, blue, pink and black on their proper spots.
 - **Real rigid-body physics** with Cannon.js: sphere–sphere momentum transfer, cushion restitution, cloth friction, rolling resistance and pocket capture.
 - **Aim like a player**: a dotted cue path, a ghost ball at first contact, a target-ball line and a cue-ball deflection line. The guide turns amber when the first ball is not on.
-- **Two camera styles**: a low *Aim lock* view behind the cue ball, or a free *Orbit table* view for reading the whole rack.
+- **Two camera styles**: a steady *Cue view* behind the cue ball, or a free *Orbit table* view for reading the whole rack.
 - **Power, spin and elevation**: slider or hold-to-charge stroke meter, a draggable cue-ball contact dot for follow, screw and left/right english, and a cue elevation control for gentle jump/masse shots.
 - **A referee**: alternates reds and colours, enforces the clearance order, respots colours, detects scratches, wrong-ball first contact, misses and illegal pots, and awards 4–7 point penalties.
 - **Two-player or AI**: the computer chooses pots by ghost-ball geometry, falls back to a safe contact, and plays with a little human error.
@@ -43,18 +43,23 @@ The HUD always shows the ball on, the reds left, the points left, the current br
 
 | Input | Action |
 | --- | --- |
-| Move the pointer over the cloth | Aim the cue ball |
+| **Drag on the cloth** | Fine-aim; the cue eases toward the angle |
+| **Click on the cloth** | Move the aim to that spot with a smooth glide |
+| **Double-click the cloth** | Pin / release the aim so it cannot move |
+| **Click Strike** | Play the shot with the slider power |
+| **Hold Hold-to-charge, release** | Charge with the mouse and strike |
 | Left-drag (Orbit table) | Orbit the camera |
 | Mouse wheel / pinch | Zoom |
-| **Aim lock** / **Orbit table** | Switch camera style |
+| **Cue view** / **Orbit table** | Switch camera style |
 | Aim nudge buttons or `←` / `→` | Fine-tune by 0.5° (`Shift` = 2°) |
-| Power slider | Set a precise shot power |
-| Hold **Hold to charge** or `Space`, then release | Charge and strike |
 | Drag the dot on the cue-ball face | Apply follow, screw or side spin |
 | Cue elevation slider | Raise the cue butt for jump/masse shots |
-| `A` / `O` | Aim lock / orbit |
+| `A` / `O` | Cue view / orbit |
+| `L` / `C` | Pin aim / re-centre the view |
 | `R` | Centre the spin dot |
 | **New frame** | Rack a fresh frame |
+
+**One mouse, no keyboard required.** Drag on the cloth for fine aiming, or click to move the line — the cue eases toward the new angle rather than snapping, at a deliberately slow top speed. Shift-drag is extra-fine. Double-click to pin the line, set power with the slider, then click **Strike**. The camera holds its angle while you aim, so moving the mouse to the Strike button can never swing the table or change the shot. The balls are rendered slightly oversized with a warm rim light so every colour, including the black, stays readable on the baize.
 
 The dotted line is the cue ball's path. The wireframe sphere is the ghost ball at first contact. The thin gold line is where the object ball will go; the faint white line is the cue ball's tangent. If the first ball is not the ball on, the guide glows amber.
 
@@ -111,14 +116,14 @@ Stats are written to `localStorage` under `snooker3d_stats_v1` and survive reloa
 | --- | --- |
 | Rendering | Three.js r128, physically based materials, ACES filmic tone mapping, PCF soft shadows, procedural canvas cloth/wood/floor textures |
 | Physics | Cannon.js 0.6.2, 120 Hz fixed step with sub-stepping, SAP broadphase, 24 solver iterations |
-| Table | 3.569 m × 1.778 m playing area, 52.5 mm balls, 4.5 in pockets, baulk line 0.737 m from the baulk cushion, 0.292 m D |
-| Aim | 2D ray/circle intersection on the cloth plane; ghost ball, target and tangent lines |
+| Table | 3.569 m × 1.778 m playing area, 60 mm balls (slightly oversized for legibility), 4.5 in pockets, baulk line 0.737 m from the baulk cushion, 0.292 m D |
+| Aim | 2D ray/circle prediction; stable Cue view; relative drag fine-aim; eased click-to-aim; ghost ball, target and tangent lines |
 | Rules | Pure-ish `resolveShot()` referee function with an explicit ball-on state |
 | AI | Ghost-ball pot search over every legal target and pocket, path checks, pocket-based power, a safe-contact fallback and small aiming error |
 | Persistence | `localStorage` with a versioned, sanitised JSON schema |
 | Audio | Web Audio oscillators and a generated noise buffer; no media assets |
 
-The renderer draws the table in metres. The cue ball is 26.25 mm in radius, the pocket jaws are built from six cushion boxes, and pocket capture is checked against the actual mouth positions every frame. Rolling deceleration is applied on top of Cannon's damping so the balls settle like cloth, not ice.
+The renderer draws the table in metres. The balls are a slightly oversized 60 mm diameter (30 mm radius) for legibility, the pocket jaws are built from six cushion boxes, and pocket capture is checked against the actual mouth positions every frame. Rolling deceleration is applied on top of Cannon's damping so the balls settle like cloth, not ice.
 
 ### File map
 

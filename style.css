@@ -56,7 +56,9 @@ button:focus-visible, input:focus-visible {
   height: 100%;
   display: block;
 }
-#stage canvas { touch-action: none; }
+#stage canvas { touch-action: none; cursor: crosshair; }
+body.is-orbit #stage canvas { cursor: grab; }
+body.is-orbit #stage canvas:active { cursor: grabbing; }
 
 .vignette {
   position: fixed;
@@ -310,6 +312,10 @@ body.is-muted .ico-sound-off { display: block; }
 }
 .mini-help {
   width: 20px; height: 20px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
   border: 1px solid var(--line-soft);
   border-radius: 50%;
   background: transparent;
@@ -319,6 +325,14 @@ body.is-muted .ico-sound-off { display: block; }
   transition: 0.2s;
 }
 .mini-help:hover { color: var(--brass-hi); border-color: var(--brass); }
+.mini-help.is-on {
+  background: var(--brass);
+  border-color: var(--brass-hi);
+  color: #201205;
+  box-shadow: 0 0 12px rgba(201, 164, 92, 0.4);
+}
+.mini-help:disabled { opacity: 0.3; cursor: not-allowed; }
+.label-end { display: flex; align-items: center; gap: 5px; }
 
 /* ── Scoreboard ──────────────────────────────────────────── */
 .scoreboard { top: 84px; left: 20px; }
@@ -1187,6 +1201,8 @@ kbd {
     font-size: 18px;
   }
   .control-label { margin-bottom: 5px; }
+  .label-end { gap: 6px; }
+  .label-end .mini-help { width: 24px; height: 24px; }
   .segmented button { height: 27px; }
   .spin-stage { width: 124px; height: 128px; margin: 1px auto 0; }
   #spin-pad { width: 108px; height: 108px; inset: 8px; }

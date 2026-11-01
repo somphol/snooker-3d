@@ -11,7 +11,7 @@
   /* ────────────────────────────────────────────────────────────────────────
      01 · CONSTANTS
      ──────────────────────────────────────────────────────────────────────── */
-  const R = 0.02625;                    // 52.5 mm snooker ball
+  const R = 0.0300;                     // 60 mm balls (slightly oversized for visibility)
   const BALL_MASS = 0.142;              // kg
   const PLAY_L = 3.569;                 // 12 ft playing length (m)
   const PLAY_W = 1.778;                 // 6 ft playing width (m)
@@ -25,8 +25,8 @@
   const COLOR_ORDER = ['yellow', 'green', 'brown', 'blue', 'pink', 'black'];
   const VALUES = { red: 1, yellow: 2, green: 3, brown: 4, blue: 5, pink: 6, black: 7, cue: 0, color: 0 };
   const BALL_HEX = {
-    red: 0xb32320, yellow: 0xe8c22e, green: 0x147c47, brown: 0x6c3d20,
-    blue: 0x2148c2, pink: 0xe98aa3, black: 0x141414, cue: 0xf4efe2
+    red: 0xd0352f, yellow: 0xf2cd36, green: 0x1e9b5b, brown: 0x814925,
+    blue: 0x2c5fe0, pink: 0xf09ab2, black: 0x2d2d2d, cue: 0xfaf5e8
   };
   const BALL_NAMES = {
     red: 'Red', yellow: 'Yellow', green: 'Green', brown: 'Brown',
@@ -70,6 +70,9 @@
     mode: '2p',                // 2p | ai
     cameraMode: 'aim',         // aim | orbit
     aimAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
+    aimTarget: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
+    aimCamAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
+    aimLocked: false,          // sticky aim (pin)
     power: 55,
     charging: false,
     chargeStart: 0,
@@ -175,6 +178,8 @@
     rack: $('rack'),
     aimReadout: $('aim-readout'),
     aimHint: $('aim-hint'),
+    lockAimBtn: $('btn-lock-aim'),
+    recenterBtn: $('btn-recenter'),
     powerSlider: $('power-slider'),
     powerReadout: $('power-readout'),
     chargeBtn: $('btn-charge'),
@@ -333,6 +338,13 @@
   let dustPoints = null;
   let spinCtx = null;
   let spinDragging = false;
+  let aimDragging = false;
+  let aimPointerId = null;
+  let aimStartAngle = 0;
+  let aimStartX = 0;
+  let aimStartY = 0;
+  let aimDragMoved = false;
+  let orbitClick = null;
 
 
   function initThree() {
@@ -341,7 +353,7 @@
     scene.fog = new THREE.FogExp2(0x070504, 0.055);
 
     camera = new THREE.PerspectiveCamera(isNarrow() ? 66 : 42, window.innerWidth / window.innerHeight, 0.04, 60);
-    camera.position.set(0, 3.15, 2.62);
+    camera.position.set(0.85, 2.15, 3.15);
     cameraLook = new THREE.Vector3(0, 0.02, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -359,7 +371,7 @@
     controls.target.copy(cameraLook);
     controls.enableDamping = true;
     controls.dampingFactor = 0.075;
-    controls.rotateSpeed = 0.55;
+    controls.rotateSpeed = 0.42;
     controls.zoomSpeed = 0.8;
     controls.panSpeed = 0.6;
     controls.minDistance = 1.15;
@@ -383,8 +395,12 @@
     buildAimGuide();
 
     window.addEventListener('resize', onResize);
+    renderer.domElement.addEventListener('pointerdown', onScenePointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
-    renderer.domElement.addEventListener('pointerdown', () => Audio.unlock());
+    renderer.domElement.addEventListener('pointerup', onScenePointerUp);
+    renderer.domElement.addEventListener('pointercancel', onScenePointerCancel);
+    renderer.domElement.addEventListener('dblclick', onSceneDoubleClick);
+    window.addEventListener('pointerup', onWindowPointerUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     document.addEventListener('pointerdown', () => Audio.unlock(), { once: true });
@@ -499,13 +515,13 @@
 
   /* ── Lights ───────────────────────────────────────────────────────────── */
   function buildLights() {
-    scene.add(new THREE.AmbientLight(0x4a3528, 0.5));
+    scene.add(new THREE.AmbientLight(0x4a3528, 0.56));
     const hemi = new THREE.HemisphereLight(0xbcc8ff, 0x2a140c, 0.28);
     scene.add(hemi);
 
     const warm = 0xffd6a0;
     [-1.05, 0, 1.05].forEach((x, i) => {
-      const spot = new THREE.SpotLight(warm, i === 1 ? 1.28 : 0.9, 6.5, 0.72, 0.55, 1.3);
+      const spot = new THREE.SpotLight(warm, i === 1 ? 1.36 : 0.96, 6.5, 0.72, 0.55, 1.3);
       spot.position.set(x, 1.62, 0);
       spot.target.position.set(x * 0.3, 0, 0);
       scene.add(spot); scene.add(spot.target);
@@ -520,7 +536,7 @@
       }
     });
 
-    const fill = new THREE.PointLight(0xff9b55, 0.34, 8, 1.6);
+    const fill = new THREE.PointLight(0xff9b55, 0.46, 8, 1.6);
     fill.position.set(0, 1.1, 2.6);
     scene.add(fill);
     const back = new THREE.PointLight(0x7c9dff, 0.18, 7, 1.8);
@@ -989,21 +1005,60 @@
     buildBalls();
   }
 
+  const ballRimGeo = new THREE.SphereGeometry(R * 1.025, 28, 20);
+  const ballRimMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(0xffe4b3) },
+      uStrength: { value: 0.58 }
+    },
+    vertexShader: `
+      varying vec3 vN;
+      varying vec3 vV;
+      void main() {
+        vN = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vN;
+      varying vec3 vV;
+      uniform vec3 uColor;
+      uniform float uStrength;
+      void main() {
+        float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
+        gl_FragColor = vec4(uColor, rim * uStrength);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.FrontSide
+  });
+
   function createBall(type, index, x, z) {
     const color = BALL_HEX[type];
     const isCue = type === 'cue';
     const material = new THREE.MeshPhysicalMaterial({
       color: color,
-      roughness: isCue ? 0.13 : 0.16,
+      roughness: isCue ? 0.12 : 0.15,
       metalness: 0.02,
       clearcoat: 1,
-      clearcoatRoughness: 0.06,
-      envMapIntensity: 0.8
+      clearcoatRoughness: 0.05,
+      emissive: new THREE.Color(color).multiplyScalar(0.055),
+      emissiveIntensity: 0.7,
+      envMapIntensity: 0.9
     });
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(R, 34, 24), material);
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(R, 36, 26), material);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.position.set(x, R + 0.0008, z);
+    // Warm Fresnel rim: keeps the black and dark colours readable against
+    // the baize without turning the balls into glowing ornaments.
+    const rim = new THREE.Mesh(ballRimGeo, ballRimMat);
+    rim.renderOrder = 2;
+    mesh.add(rim);
     scene.add(mesh);
 
     const body = new CANNON.Body({
@@ -1269,8 +1324,12 @@
   /* ────────────────────────────────────────────────────────────────────────
      08 · AIMING, CUE, POINTER
      ──────────────────────────────────────────────────────────────────────── */
+  function angleVector(angle) {
+    return new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+  }
+
   function aimVector() {
-    return new THREE.Vector3(Math.cos(app.aimAngle), 0, Math.sin(app.aimAngle));
+    return angleVector(app.aimAngle);
   }
 
   function updateAimGuide() {
@@ -1414,10 +1473,8 @@
     if (s.t >= 0.24) app.cueStrike = null;
   }
 
-  function onPointerMove(e) {
-    if (app.phase !== 'aiming' || rules.frameOver) return;
-    if (app.mode === 'ai' && rules.current === 1) return;
-    if (e.buttons && app.cameraMode === 'orbit') return;
+  function aimPointFromEvent(e) {
+    if (!renderer) return null;
     const rect = renderer.domElement.getBoundingClientRect();
     const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1425,12 +1482,144 @@
     ray.setFromCamera(new THREE.Vector2(nx, ny), camera);
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const hit = new THREE.Vector3();
-    if (!ray.ray.intersectPlane(plane, hit)) return;
+    if (!ray.ray.intersectPlane(plane, hit)) return null;
+    // Ignore the dark room around the table, so a stray click cannot swing
+    // the cue through 180 degrees.
+    if (Math.abs(hit.x) > L + 0.35 || Math.abs(hit.z) > W + 0.35) return null;
+    return hit;
+  }
+
+  function normalizeAngle(a) {
+    a = a % (Math.PI * 2);
+    if (a > Math.PI) a -= Math.PI * 2;
+    if (a < -Math.PI) a += Math.PI * 2;
+    return a;
+  }
+
+  function shortestAngle(target, current) {
+    return normalizeAngle(target - current);
+  }
+
+  function setAimImmediate(angle) {
+    app.aimAngle = normalizeAngle(angle);
+    app.aimTarget = app.aimAngle;
+    updateAimReadout();
+  }
+
+  function setAimTarget(angle) {
+    app.aimTarget = normalizeAngle(angle);
+  }
+
+  function setAimTargetFromEvent(e) {
+    if (!isHumanTurn() || app.aimLocked || app.charging) return false;
+    const hit = aimPointFromEvent(e);
+    if (!hit) return false;
     const dx = hit.x - cueBall.body.position.x;
     const dz = hit.z - cueBall.body.position.z;
-    if (Math.hypot(dx, dz) < R * 2.2) return;
-    app.aimAngle = Math.atan2(dz, dx);
+    if (Math.hypot(dx, dz) < 0.12) return false;
+    setAimTarget(Math.atan2(dz, dx));
+    return true;
+  }
+
+  function smoothAim(dt) {
+    const diff = shortestAngle(app.aimTarget, app.aimAngle);
+    if (Math.abs(diff) < 0.0002) {
+      if (app.aimAngle !== app.aimTarget) {
+        app.aimAngle = app.aimTarget;
+        updateAimReadout();
+      }
+      return;
+    }
+    // Top angular speed and a soft ease keep a click from snapping the cue.
+    const maxStep = deg2rad(90) * dt;
+    const eased = diff * (1 - Math.exp(-8.5 * dt));
+    app.aimAngle = normalizeAngle(app.aimAngle + clamp(eased, -maxStep, maxStep));
     updateAimReadout();
+  }
+
+  function onScenePointerDown(e) {
+    Audio.unlock();
+    if (e.button !== undefined && e.button !== 0) return;
+    if (app.phase !== 'aiming' || !isHumanTurn()) return;
+    if (app.cameraMode === 'aim') {
+      if (app.aimLocked) return;
+      aimDragging = true;
+      aimPointerId = e.pointerId;
+      aimStartAngle = app.aimAngle;
+      aimStartX = e.clientX;
+      aimStartY = e.clientY;
+      aimDragMoved = false;
+      try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    } else {
+      orbitClick = {
+        x: e.clientX, y: e.clientY,
+        t: performance.now(),
+        id: e.pointerId,
+        moved: false
+      };
+    }
+  }
+
+  function onPointerMove(e) {
+    if (aimDragging && e.pointerId === aimPointerId) {
+      const dx = e.clientX - aimStartX;
+      const dy = e.clientY - aimStartY;
+      if (!aimDragMoved && Math.hypot(dx, dy) > 3) aimDragMoved = true;
+      if (aimDragMoved) {
+        // Relative drag: a full screen width is about 75°, and Shift is
+        // an even finer 25°. A click is still available for a coarse aim.
+        const width = Math.max(320, window.innerWidth);
+        const fine = e.shiftKey ? 0.25 : 1;
+        setAimTarget(aimStartAngle + (dx / width) * Math.PI * 0.42 * fine);
+      }
+      return;
+    }
+    if (orbitClick && e.pointerId === orbitClick.id) {
+      if (Math.hypot(e.clientX - orbitClick.x, e.clientY - orbitClick.y) > 8) {
+        orbitClick.moved = true;
+      }
+    }
+  }
+
+  function onScenePointerUp(e) {
+    if (aimDragging && e.pointerId === aimPointerId) {
+      const moved = aimDragMoved;
+      aimDragging = false;
+      aimPointerId = null;
+      try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+      // A click without a drag is a coarse aim at that spot.
+      if (!moved) setAimTargetFromEvent(e);
+      return;
+    }
+    if (orbitClick && e.pointerId === orbitClick.id) {
+      const click = orbitClick;
+      orbitClick = null;
+      if (!click.moved && performance.now() - click.t < 650) setAimTargetFromEvent(e);
+    }
+  }
+
+  function onScenePointerCancel(e) {
+    if (aimDragging && e.pointerId === aimPointerId) {
+      aimDragging = false;
+      aimPointerId = null;
+      try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    }
+    if (orbitClick && e.pointerId === orbitClick.id) orbitClick = null;
+  }
+
+  function onSceneDoubleClick(e) {
+    if (app.phase !== 'aiming' || !isHumanTurn()) return;
+    if (!aimPointFromEvent(e)) return;
+    e.preventDefault();
+    setAimLocked(!app.aimLocked);
+  }
+
+  function onWindowPointerUp(e) {
+    if (aimDragging && e.pointerId === aimPointerId) {
+      aimDragging = false;
+      aimPointerId = null;
+    }
+    if (orbitClick && e.pointerId === orbitClick.id) orbitClick = null;
   }
 
   function onKeyDown(e) {
@@ -1450,6 +1639,10 @@
       setCameraMode('orbit');
     } else if (e.key === 'r' || e.key === 'R') {
       resetSpin();
+    } else if (e.key === 'l' || e.key === 'L') {
+      if (isHumanTurn()) setAimLocked(!app.aimLocked);
+    } else if (e.key === 'c' || e.key === 'C') {
+      if (isHumanTurn()) recenterAimCamera();
     } else if (e.key === 'Escape') {
       closeAllModals();
     }
@@ -1468,8 +1661,7 @@
 
   function nudgeAim(deg) {
     if (!isHumanTurn()) return;
-    app.aimAngle += deg2rad(deg);
-    updateAimReadout();
+    setAimTarget(app.aimTarget + deg2rad(deg));
   }
 
   function updateAimReadout() {
@@ -1479,16 +1671,94 @@
     dom.aimReadout.textContent = `${deg >= 0 ? '+' : ''}${deg.toFixed(1)}°`;
   }
 
+  function updateAimHint() {
+    if (!dom.aimHint) return;
+    if (app.aimLocked) {
+      dom.aimHint.textContent = app.cameraMode === 'aim'
+        ? 'Aim pinned · double-click the cloth or the pin to release.'
+        : 'Aim pinned · drag to orbit freely. Click the pin to release.';
+    } else if (app.cameraMode === 'aim') {
+      dom.aimHint.textContent = 'Drag to fine-aim · click to aim · double-click to pin.';
+    } else {
+      dom.aimHint.textContent = 'Click to aim · drag to orbit · double-click to pin.';
+    }
+  }
+
+  function syncAimLockUI() {
+    if (!dom.lockAimBtn) return;
+    dom.lockAimBtn.classList.toggle('is-on', app.aimLocked);
+    dom.lockAimBtn.setAttribute('aria-pressed', app.aimLocked ? 'true' : 'false');
+    dom.lockAimBtn.title = app.aimLocked
+      ? 'Release pinned aim (or double-click the cloth)'
+      : 'Pin the aim (or double-click the cloth)';
+    updateAimHint();
+  }
+
+  function setAimLocked(locked, silent) {
+    const next = !!locked;
+    if (next === app.aimLocked) return;
+    app.aimLocked = next;
+    if (next) {
+      aimDragging = false;
+      orbitClick = null;
+    }
+    syncAimLockUI();
+    if (!silent) {
+      toast(next
+        ? 'Aim pinned — move the mouse freely, then click Strike'
+        : 'Aim released — click the cloth to adjust',
+        'info', next ? 'Aim pinned' : 'Aim released');
+    }
+  }
+
+  function aimCameraGeometry() {
+    return {
+      back: isNarrow() ? 2.85 : 1.86,
+      side: isNarrow() ? 0.55 : 0.46,
+      high: isNarrow() ? 1.25 : 0.82,
+      ahead: isNarrow() ? -0.75 : 1.25
+    };
+  }
+
+  function placeAimCamera() {
+    if (!cueBall || !cueBall.active) return;
+    const p = cueBall.body.position;
+    const d = angleVector(app.aimCamAngle);
+    const g = aimCameraGeometry();
+    camera.position.set(
+      p.x - d.x * g.back + d.z * g.side,
+      g.high,
+      p.z - d.z * g.back - d.x * g.side
+    );
+    cameraLook.set(p.x + d.x * g.ahead, R + 0.02, p.z + d.z * g.ahead);
+    camera.lookAt(cameraLook);
+  }
+
+  function recenterAimCamera() {
+    if (app.cameraMode !== 'aim') {
+      setCameraMode('aim');
+    } else {
+      app.aimCamAngle = normalizeAngle(app.aimTarget);
+      placeAimCamera();
+      updateAimHint();
+    }
+  }
+
   function setCameraMode(mode) {
-    if (mode === app.cameraMode) return;
+    if (mode === app.cameraMode) {
+      if (mode === 'aim') recenterAimCamera();
+      return;
+    }
     if (mode === 'aim') {
       app._orbitPos = camera.position.clone();
       app._orbitTarget = controls.target.clone();
       app.cameraMode = 'aim';
+      app.aimCamAngle = normalizeAngle(app.aimTarget);
       controls.enabled = false;
       dom.camAim.classList.add('is-on');
       dom.camOrbit.classList.remove('is-on');
-      dom.aimHint.textContent = 'Move over the cloth to aim. The camera sits behind the cue ball.';
+      document.body.classList.remove('is-orbit');
+      placeAimCamera();
     } else {
       app.cameraMode = 'orbit';
       controls.enabled = true;
@@ -1497,28 +1767,26 @@
       controls.update();
       dom.camOrbit.classList.add('is-on');
       dom.camAim.classList.remove('is-on');
-      dom.aimHint.textContent = 'Drag to orbit, scroll to zoom. Move the pointer to aim.';
+      document.body.classList.add('is-orbit');
     }
+    updateAimHint();
   }
 
   function updateAimCamera(dt) {
     if (app.cameraMode !== 'aim' || !cueBall) return;
-    if (app.phase === 'rolling' || app.phase === 'settling') return;
+    if (app.phase !== 'aiming') return;
     const p = cueBall.body.position;
-    const d = aimVector();
-    // Sit behind and slightly to the side of the cue line so the cue is visible.
-    // Portrait screens get a wider, farther framing so the table still reads.
-    const back = isNarrow() ? 2.85 : 1.86;
-    const side = isNarrow() ? 0.55 : 0.46;
-    const high = isNarrow() ? 1.25 : 0.82;
-    const ahead = isNarrow() ? -0.75 : 1.25;
+    const d = angleVector(app.aimCamAngle);
+    // The camera holds its angle while the player aims. It only follows the
+    // cue ball's position, so moving the mouse can never swing the table.
+    const g = aimCameraGeometry();
     const desired = new THREE.Vector3(
-      p.x - d.x * back + d.z * side,
-      high,
-      p.z - d.z * back - d.x * side
+      p.x - d.x * g.back + d.z * g.side,
+      g.high,
+      p.z - d.z * g.back - d.x * g.side
     );
-    const look = new THREE.Vector3(p.x + d.x * ahead, R + 0.02, p.z + d.z * ahead);
-    const k = 1 - Math.exp(-6.5 * dt);
+    const look = new THREE.Vector3(p.x + d.x * g.ahead, R + 0.02, p.z + d.z * g.ahead);
+    const k = 1 - Math.exp(-5.0 * dt);
     camera.position.lerp(desired, k);
     cameraLook.lerp(look, k);
     camera.lookAt(cameraLook);
@@ -1570,10 +1838,16 @@
     if (!isHumanTurn() && !(app.mode === 'ai' && rules.current === 1)) return;
     if (app.phase !== 'aiming' || rules.frameOver) return;
     const power = clamp(app.power, 4, 100);
+    // Fire along the intended target angle, even if the eased line is still
+    // catching up by a fraction of a degree.
+    app.aimAngle = app.aimTarget;
+    updateAimReadout();
     const d = aimVector();
     const speed = MIN_SHOT_SPEED + (power / 100) * (MAX_SHOT_SPEED - MIN_SHOT_SPEED);
     app.phase = 'rolling';
     app.aiThinking = false;
+    aimDragging = false;
+    orbitClick = null;
     app.shot = {
       potted: [],
       firstContact: null,
@@ -1809,9 +2083,16 @@
     }
 
     app.phase = 'aiming';
+    app.aimLocked = false;
+    aimDragging = false;
+    orbitClick = null;
     // Keep the player's chosen line after a shot. Only re-aim when the cue
     // ball itself was respotted in the D, where the old line is meaningless.
-    if (shot.cuePotted && isHumanTurn()) aimAtNearestLegal();
+    if (shot.cuePotted && isHumanTurn()) {
+      aimAtNearestLegal();
+      app.aimCamAngle = app.aimAngle;
+      if (app.cameraMode === 'aim') placeAimCamera();
+    }
     updateUI();
     if (app.mode === 'ai' && rules.current === 1) scheduleAI();
   }
@@ -1906,6 +2187,7 @@
   function finishFrame() {
     rules.frameOver = true;
     app.phase = 'gameover';
+    app.aimLocked = false;
     const winner = rules.scores[0] === rules.scores[1] ? -1 : (rules.scores[0] > rules.scores[1] ? 0 : 1);
     if (app.mode === 'ai') {
       if (winner === 0) stats.wins.p1++;
@@ -1962,14 +2244,12 @@
     for (const t of sorted) {
       const aim = findClearAim(t);
       if (aim) {
-        app.aimAngle = aim.angle;
-        updateAimReadout();
+        setAimImmediate(aim.angle);
         return;
       }
     }
     const b = sorted[0];
-    app.aimAngle = Math.atan2(b.body.position.z - p.z, b.body.position.x - p.x);
-    updateAimReadout();
+    setAimImmediate(Math.atan2(b.body.position.z - p.z, b.body.position.x - p.x));
   }
 
   /* ────────────────────────────────────────────────────────────────────────
@@ -2043,7 +2323,7 @@
       const dx = best.ghostX - p.x;
       const dz = best.ghostZ - p.z;
       const err = (Math.random() - 0.5) * 0.028 * (best.cd > 1.2 ? 1.5 : 1);
-      app.aimAngle = Math.atan2(dz, dx) + err;
+      setAimImmediate(Math.atan2(dz, dx) + err);
       const need = clamp(1.35 + best.cd * 0.55 + best.pd * 0.4, 2.1, 5.2);
       app.power = clamp(((need - MIN_SHOT_SPEED) / (MAX_SHOT_SPEED - MIN_SHOT_SPEED)) * 100, 28, 82);
       app.spin = { x: (Math.random() - 0.5) * 0.22, y: 0.18 };
@@ -2064,11 +2344,13 @@
         }
       }
       const err = (Math.random() - 0.5) * 0.012;
-      app.aimAngle = Math.atan2(safety.body.position.z - p.z, safety.body.position.x - p.x) + err;
+      setAimImmediate(Math.atan2(safety.body.position.z - p.z, safety.body.position.x - p.x) + err);
       app.power = clamp(38 + Math.random() * 20, 34, 62);
       app.spin = { x: (Math.random() - 0.5) * 0.2, y: 0 };
     }
 
+    app.aimCamAngle = app.aimAngle;
+    if (app.cameraMode === 'aim') placeAimCamera();
     updateAimReadout();
     updateSpinUI();
     updatePowerUI();
@@ -2113,22 +2395,16 @@
       b.mesh.rotation.set(0, 0, 0);
     });
     aimAtNearestLegal();
+    app.aimCamAngle = app.aimAngle;
+    app.aimLocked = false;
+    aimDragging = false;
+    orbitClick = null;
     resetSpin();
     updatePowerUI();
     updateAimReadout();
     updateUI();
     setCameraMode('aim');
-    if (app.cameraMode === 'aim') {
-      const d = aimVector();
-      const p = cueBall.body.position;
-      const back = isNarrow() ? 2.85 : 1.86;
-      const side = isNarrow() ? 0.55 : 0.46;
-      const high = isNarrow() ? 1.25 : 0.82;
-      const ahead = isNarrow() ? -0.75 : 1.25;
-      camera.position.set(p.x - d.x * back + d.z * side, high, p.z - d.z * back - d.x * side);
-      cameraLook.set(p.x + d.x * ahead, R, p.z + d.z * ahead);
-      camera.lookAt(cameraLook);
-    }
+    if (app.cameraMode === 'aim') placeAimCamera();
     if (count) {
       banner(`Frame ${pad2(app.frameNo)}`, 'Rack them up', `${playerName(rules.current)} to break`);
     }
@@ -2183,6 +2459,7 @@
     updateRack();
     updateStatus();
     updateShootAvailability();
+    syncAimLockUI();
 
     const ai = app.mode === 'ai' && rules.current === 1;
     dom.powerSlider.disabled = !isHumanTurn();
@@ -2275,6 +2552,8 @@
     dom.powerSlider.disabled = !human;
     dom.chargeBtn.disabled = !human;
     dom.elevSlider.disabled = !human;
+    if (dom.lockAimBtn) dom.lockAimBtn.disabled = !human;
+    if (dom.recenterBtn) dom.recenterBtn.disabled = !human;
   }
 
   function updateSpinUI() {
@@ -2531,6 +2810,7 @@
         }
       }
     } else if (app.phase === 'aiming') {
+      smoothAim(dt);
       stepPhysics(dt * 0.35); // keep resting balls stable / settle tiny jitters
       updatePotAnims(dt);
       updateAimGuide();
@@ -2598,6 +2878,16 @@
       if (!isHumanTurn()) return;
       Audio.unlock();
       takeShot();
+    });
+
+    dom.lockAimBtn.addEventListener('click', () => {
+      if (!isHumanTurn()) return;
+      setAimLocked(!app.aimLocked);
+    });
+    dom.recenterBtn.addEventListener('click', () => {
+      if (!isHumanTurn()) return;
+      recenterAimCamera();
+      toast('View re-centred behind the cue ball', 'info', 'Camera');
     });
 
     document.querySelectorAll('[data-cam]').forEach((btn) => {
@@ -2693,6 +2983,7 @@
         b.mesh.visible = true;
       });
       app.aimAngle = Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]);
+      app.aimTarget = app.aimAngle;
       drawSpinPad();
       updatePowerUI();
       updateAimReadout();

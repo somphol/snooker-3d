@@ -4,8 +4,8 @@
 | --- | --- |
 | Project | The Mahogany Room · 3D Snooker (`snooker-3d`) |
 | Started | 2026-10-31 23:45:05 UTC |
-| Packaged | 2026-11-01 00:15:53 UTC |
-| Duration | **30m 47s** (1,847 seconds) |
+| Packaged | 2026-11-01 00:38:45 UTC |
+| Duration | **53m 40s** (3,220 seconds) |
 | Harness | OpenCode 2.2.5 |
 | Model | DeepSeek V4.1 Flash (`opencode-go/deepseek-v4.1-flash`) |
 | Session | `ses_e6ba5bd0cffeNxKRA16F47omGg` |
@@ -16,26 +16,28 @@
 
 | Metric | Tokens |
 | --- | ---: |
-| Input | 412,246 |
-| Output | 94,638 |
-| Reasoning | 134,617 |
-| **Total (input + output + reasoning)** | **641,501** |
-| Cache read | 14,969,856 |
+| Input | 939,163 |
+| Output | 127,154 |
+| Reasoning | 214,605 |
+| **Total (input + output + reasoning)** | **1,280,922** |
+| Cache read | 36,563,584 |
 | Cache write | 1,277 |
-| Total including cache | 15,612,634 |
+| Total including cache | 37,845,783 |
 
-> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 00:15:53 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
+> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 00:38:45 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
 
 ## What was built
 
 - A complete 22-ball 3D snooker game in three modular files:
-  - `index.html` — 15,058 bytes, 289 lines
-  - `style.css` — 33,684 bytes, 1,221 lines
-  - `script.js` — 108,851 bytes, 2,859 lines
+  - `index.html` — 16,178 bytes, 301 lines
+  - `style.css` — 34,231 bytes, 1,237 lines
+  - `script.js` — 118,041 bytes, 3,150 lines
 - A 12 ft × 6 ft table: procedural mahogany, baize, brass pocket rims, six pockets, baulk line, D, spots, legs, nameplate, hanging lamps and a club-room backdrop.
-- Cannon.js ball physics at a fixed 120 Hz with sub-stepping: ball–ball momentum transfer, cushion restitution, cloth friction, custom rolling resistance, pocket capture and off-table recovery.
-- Full cue control: Orbit table / Aim lock cameras, pointer aiming, fine nudge, power slider, hold-to-charge meter, draggable cue-ball spin pad, elevation and a 3D cue with strike animation.
-- Aim assist: dotted cue path, ghost ball at contact, object-ball line, cue-ball tangent, and amber warning when the first ball is not on.
+- Cannon.js ball physics at 120 Hz with sub-stepping: ball–ball momentum transfer, cushion restitution, cloth friction, custom rolling resistance, pocket capture and off-table recovery.
+- **60 mm balls** (slightly oversized for visibility) with brighter colours and a warm Fresnel rim light, so every colour — including the black — reads against the baize.
+- Full cue control: Orbit table / **Cue view** cameras, **relative drag fine-aiming**, **eased click-to-aim**, **sticky aim pin**, fine nudge, power slider, hold-to-charge meter, mouse-only Strike, draggable cue-ball spin pad, elevation and a 3D cue with strike animation.
+- A **stable aim camera**: it holds its angle while you aim and only follows the cue ball's position, so moving the mouse can never swing the table.
+- Aim assist: dotted cue path, ghost ball at contact, object-ball line, cue-ball tangent, and an amber warning when the first ball is not on.
 - Referee: reds and colours, free-colour phase after the last red, clearance order, colour respotting, cue-ball respotting, 4–7 point fouls, break tracking, 147 support, respotted-black tie-break and frame completion.
 - AI opponent that searches ghost-ball pots over every pocket, validates paths, falls back to a same-side safety, and plays with small human error.
 - Career statistics in `localStorage`: matches, frames, Player One/Two/Computer wins, high break, centuries and total pots, with tested JSON export and import.
@@ -54,7 +56,10 @@
   - an AI break, its first contact and its foul handling,
   - hold-to-charge and release-to-strike,
   - stats export to `snooker_3d_stats.json` and import back into a cleared career,
-  - the victory modal and new-frame flow.
+  - the victory modal and new-frame flow,
+  - a fixed camera while moving the mouse, relative drag fine-aim, eased click-to-aim, the sticky pin and one-mouse Strike,
+  - a clean pot with the larger 60 mm balls,
+  - the rim-light colour treatment.
 - **0** console errors in the final local load and **0** on the live GitHub Pages load.
 - Screenshots rendered at 1600 × 1000 (desktop) and 390 × 844 @2× (portrait).
 - Live page: <https://somphol.github.io/snooker-3d/> (verified serving the 22-ball game).

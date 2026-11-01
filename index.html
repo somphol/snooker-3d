@@ -123,10 +123,21 @@
     </div>
 
     <section class="control-block">
-      <div class="control-label"><span>Aim</span><b id="aim-readout">0.0°</b></div>
+      <div class="control-label">
+        <span>Aim</span>
+        <span class="label-end">
+          <b id="aim-readout">0.0°</b>
+          <button class="mini-help" id="btn-lock-aim" title="Pin the aim (or double-click the cloth)" aria-label="Pin aim" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+          </button>
+          <button class="mini-help" id="btn-recenter" title="Re-centre the camera behind the cue ball" aria-label="Re-centre view">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 10-2.4 5.7"/><path d="M20 4v7h-7"/></svg>
+          </button>
+        </span>
+      </div>
       <div class="segmented" role="group" aria-label="Camera mode">
         <button id="cam-orbit" data-cam="orbit">Orbit table</button>
-        <button id="cam-aim" data-cam="aim" class="is-on">Aim lock</button>
+        <button id="cam-aim" data-cam="aim" class="is-on">Cue view</button>
       </div>
       <div class="nudge-row">
         <button class="nudge" data-nudge="-2" title="Aim 2° left">&#8634; 2°</button>
@@ -134,7 +145,7 @@
         <button class="nudge" data-nudge="0.5" title="Aim ½° right">+ ½°</button>
         <button class="nudge" data-nudge="2" title="Aim 2° right">2° &#8635;</button>
       </div>
-      <p class="hint" id="aim-hint">Move over the cloth to aim. Drag to orbit in table view.</p>
+      <p class="hint" id="aim-hint">Drag to fine-aim · click to aim · double-click to pin.</p>
     </section>
 
     <section class="control-block">
@@ -168,7 +179,7 @@
 
     <button class="shoot-btn" id="btn-shoot">
       <span>Strike</span>
-      <small>Space</small>
+      <small>Click</small>
     </button>
   </aside>
 
@@ -203,12 +214,12 @@
       <div class="rule-grid">
         <section>
           <h3><span>01</span> Aim</h3>
-          <p>Move the pointer across the cloth to line up the cue ball. The dotted line shows its path; the ghost ball marks first contact and the thin line shows where the target ball will go.</p>
-          <p>Use <b>Aim lock</b> for a low view behind the cue ball, or <b>Orbit table</b> to inspect the whole rack. The nudge buttons and <kbd>←</kbd> <kbd>→</kbd> fine-tune by fractions of a degree.</p>
+          <p><b>Drag on the cloth for fine aim</b>, or click to move the line. The cue eases toward the new angle instead of snapping. The dotted line shows its path; the ghost ball marks first contact and the thin line shows where the target ball will go.</p>
+          <p>Use <b>Cue view</b> for a steady view behind the cue ball, or <b>Orbit table</b> to inspect the whole rack. <b>Double-click the cloth</b> (or the pin button beside the angle) to pin the aim so mouse movement cannot change it. The nudge buttons and <kbd>←</kbd> <kbd>→</kbd> fine-tune by fractions of a degree.</p>
         </section>
         <section>
           <h3><span>02</span> Strike</h3>
-          <p>Set power with the slider, or <b>hold</b> the charge button or <kbd>Space</kbd> and release to strike. Elevation lifts the butt of the cue for gentle jump and masse shots.</p>
+          <p>Set power with the slider, then <b>click Strike</b>. Or <b>hold</b> the charge button with the mouse and release. Everything works with one mouse; <kbd>Space</kbd> is only an optional shortcut. Elevation lifts the butt of the cue for gentle jump and masse shots.</p>
           <p>Drag the dot on the cue-ball face for follow (top), screw (back) and side spin. Right english also curves the cue ball slightly through the cloth.</p>
         </section>
         <section>
@@ -223,10 +234,11 @@
         </section>
       </div>
       <div class="shortcut-row">
-        <span><kbd>Space</kbd> charge / strike</span>
+        <span><b>Mouse</b> click / drag to aim</span>
+        <span><b>Double-click</b> pin aim</span>
+        <span><b>Click Strike</b> or hold charge</span>
         <span><kbd>←</kbd><kbd>→</kbd> fine aim</span>
-        <span><kbd>A</kbd> aim lock</span>
-        <span><kbd>O</kbd> orbit</span>
+        <span><kbd>Space</kbd> optional strike</span>
         <span><kbd>R</kbd> reset spin</span>
       </div>
     </article>

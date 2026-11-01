@@ -73,6 +73,7 @@
     aimAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimTarget: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimCamAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
+    aimFree: false,            // true = keep the Scene camera framing while aiming
     aimLocked: false,          // sticky aim (pin)
     power: 55,
     charging: false,
@@ -1713,6 +1714,8 @@
     }
     if (app.aimLocked) {
       dom.aimHint.textContent = 'Aim pinned · double-click the cloth or the pin to release.';
+    } else if (app.aimFree) {
+      dom.aimHint.textContent = 'Aim · scene framing kept · drag/click/scroll to aim · recentre for cue view.';
     } else {
       dom.aimHint.textContent = 'Drag to fine-aim · click to aim · scroll to nudge · double-click to pin.';
     }
@@ -1780,6 +1783,7 @@
       if (tool === 'aim') recenterAimCamera();
       return;
     }
+    const fromScene = app.tool === 'scene';
     app.tool = tool;
     if (tool !== 'aim' && app.aimLocked) {
       app.aimLocked = false;
@@ -1789,7 +1793,8 @@
     if (tool === 'scene') {
       if (app.cameraMode !== 'orbit') setCameraMode('orbit');
     } else if (app.cameraMode !== 'aim') {
-      setCameraMode('aim');
+      // Coming from Scene: keep the exact framing the player set.
+      setCameraMode('aim', fromScene);
     }
     if (tool === 'shot') {
       toast('Shot tool · hold the cloth to charge, release to strike', 'info', 'Mouse: Shot');
@@ -1806,26 +1811,35 @@
       setCameraMode('aim');
       return;
     }
+    app.aimFree = false;
     app.aimCamAngle = normalizeAngle(app.aimTarget);
     placeAimCamera();
     updateAimHint();
   }
 
-  function setCameraMode(mode) {
+  function setCameraMode(mode, keepView) {
     if (mode === app.cameraMode) {
-      if (mode === 'aim') recenterAimCamera();
+      if (mode === 'aim' && !keepView) recenterAimCamera();
       return;
     }
     if (mode === 'aim') {
       app._orbitPos = camera.position.clone();
       app._orbitTarget = controls.target.clone();
       app.cameraMode = 'aim';
-      app.aimCamAngle = normalizeAngle(app.aimTarget);
       controls.enabled = false;
       document.body.classList.remove('is-orbit');
-      placeAimCamera();
+      if (keepView) {
+        app.aimFree = true;
+        cameraLook.copy(controls.target);
+        camera.lookAt(cameraLook);
+      } else {
+        app.aimFree = false;
+        app.aimCamAngle = normalizeAngle(app.aimTarget);
+        placeAimCamera();
+      }
     } else {
       app.cameraMode = 'orbit';
+      app.aimFree = false;
       controls.enabled = true;
       if (app._orbitPos) camera.position.copy(app._orbitPos);
       if (app._orbitTarget) controls.target.copy(app._orbitTarget);
@@ -1837,6 +1851,7 @@
 
   function updateAimCamera(dt) {
     if (app.cameraMode !== 'aim' || !cueBall) return;
+    if (app.aimFree) return;
     if (app.phase !== 'aiming') return;
     const p = cueBall.body.position;
     const d = angleVector(app.aimCamAngle);
@@ -2161,6 +2176,7 @@
     if (shot.cuePotted && isHumanTurn()) {
       aimAtNearestLegal();
       app.aimCamAngle = app.aimAngle;
+      app.aimFree = false;
       if (app.cameraMode === 'aim') placeAimCamera();
     }
     if (app.tool === 'shot') setTool('aim');
@@ -2421,7 +2437,7 @@
     }
 
     app.aimCamAngle = app.aimAngle;
-    if (app.cameraMode === 'aim') placeAimCamera();
+    if (app.cameraMode === 'aim' && !app.aimFree) placeAimCamera();
     updateAimReadout();
     updateSpinUI();
     updatePowerUI();
@@ -2474,7 +2490,11 @@
     updateAimReadout();
     updateUI();
     setTool('aim');
-    if (app.cameraMode === 'aim') placeAimCamera();
+    app.aimFree = false;
+    if (app.cameraMode === 'aim') {
+      app.aimCamAngle = normalizeAngle(app.aimTarget);
+      placeAimCamera();
+    }
     if (count) {
       banner(`Frame ${pad2(app.frameNo)}`, 'Rack them up', `${playerName(rules.current)} to break`);
     }

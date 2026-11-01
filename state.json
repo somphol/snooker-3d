@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T00:59:54Z",
-    "durationSeconds": 4489.1,
-    "durationHuman": "1h 14m 49s",
+    "completedAt": "2026-11-01T01:15:15Z",
+    "durationSeconds": 5409.5,
+    "durationHuman": "1h 30m 10s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 957991,
-    "output": 149739,
-    "reasoning": 261330,
-    "cacheRead": 55996800,
+    "input": 961859,
+    "output": 158750,
+    "reasoning": 277336,
+    "cacheRead": 62620544,
     "cacheWrite": 1277,
-    "total": 1369060,
-    "totalWithCache": 57367137,
+    "total": 1397945,
+    "totalWithCache": 64019766,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -85,7 +85,8 @@
       "aim",
       "scene",
       "shot"
-    ]
+    ],
+    "sceneFramingPreserved": true
   },
   "source": {
     "index.html": {
@@ -97,8 +98,8 @@
       "lines": 1239
     },
     "script.js": {
-      "bytes": 120490,
-      "lines": 3222
+      "bytes": 121265,
+      "lines": 3242
     }
   },
   "artifacts": [
@@ -146,11 +147,14 @@
       "quick click in Shot mode cancels with a hint",
       "Aim/Scene/Shot mouse tools",
       "Scene orbits without changing aim",
-      "quick click in Shot mode cancels"
+      "quick click in Shot mode cancels",
+      "Scene \u2192 Aim preserves the exact camera framing and shot angle",
+      "Scene \u2192 Shot preserves the framing",
+      "recentre returns to cue view"
     ],
     "consoleErrors": 0,
     "liveDemo": "https://somphol.github.io/snooker-3d/",
-    "liveVerifiedAt": "2026-11-01T00:59:54Z",
+    "liveVerifiedAt": "2026-11-01T01:15:15Z",
     "liveConsoleErrors": 0,
     "localConsoleErrors": 0
   },

@@ -69,6 +69,7 @@
     phase: 'loading',          // loading | aiming | rolling | settling | gameover
     mode: '2p',                // 2p | ai
     cameraMode: 'aim',         // aim | orbit
+    tool: 'aim',               // aim | scene | shot
     aimAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimTarget: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimCamAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
@@ -76,6 +77,7 @@
     power: 55,
     charging: false,
     chargeStart: 0,
+    chargePrevPower: 55,
     spin: { x: 0, y: 0 },
     elevation: 4,
     soundOn: true,
@@ -190,8 +192,9 @@
     elevSlider: $('elev-slider'),
     elevReadout: $('elev-readout'),
     shootBtn: $('btn-shoot'),
-    camOrbit: $('cam-orbit'),
-    camAim: $('cam-aim'),
+    toolAim: $('tool-aim'),
+    toolScene: $('tool-scene'),
+    toolShot: $('tool-shot'),
     statusPill: $('status-pill'),
     statusText: $('status-text'),
     toast: $('toast'),
@@ -344,7 +347,8 @@
   let aimStartX = 0;
   let aimStartY = 0;
   let aimDragMoved = false;
-  let orbitClick = null;
+  let shotPointerId = null;
+  let lastShotTip = 0;
 
 
   function initThree() {
@@ -400,6 +404,7 @@
     renderer.domElement.addEventListener('pointerup', onScenePointerUp);
     renderer.domElement.addEventListener('pointercancel', onScenePointerCancel);
     renderer.domElement.addEventListener('dblclick', onSceneDoubleClick);
+    renderer.domElement.addEventListener('wheel', onSceneWheel, { passive: false });
     window.addEventListener('pointerup', onWindowPointerUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
@@ -1541,73 +1546,88 @@
     Audio.unlock();
     if (e.button !== undefined && e.button !== 0) return;
     if (app.phase !== 'aiming' || !isHumanTurn()) return;
-    if (app.cameraMode === 'aim') {
-      if (app.aimLocked) return;
-      aimDragging = true;
-      aimPointerId = e.pointerId;
-      aimStartAngle = app.aimAngle;
-      aimStartX = e.clientX;
-      aimStartY = e.clientY;
-      aimDragMoved = false;
+
+    if (app.tool === 'shot') {
+      if (app.charging) return;
+      shotPointerId = e.pointerId;
       try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
-    } else {
-      orbitClick = {
-        x: e.clientX, y: e.clientY,
-        t: performance.now(),
-        id: e.pointerId,
-        moved: false
-      };
+      startCharge();
+      return;
     }
+
+    if (app.tool === 'scene') return; // OrbitControls owns the mouse
+
+    if (app.aimLocked) return;
+    aimDragging = true;
+    aimPointerId = e.pointerId;
+    aimStartAngle = app.aimAngle;
+    aimStartX = e.clientX;
+    aimStartY = e.clientY;
+    aimDragMoved = false;
+    try { renderer.domElement.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
   }
 
   function onPointerMove(e) {
-    if (aimDragging && e.pointerId === aimPointerId) {
-      const dx = e.clientX - aimStartX;
-      const dy = e.clientY - aimStartY;
-      if (!aimDragMoved && Math.hypot(dx, dy) > 3) aimDragMoved = true;
-      if (aimDragMoved) {
-        // Relative drag: a full screen width is about 75°, and Shift is
-        // an even finer 25°. A click is still available for a coarse aim.
-        const width = Math.max(320, window.innerWidth);
-        const fine = e.shiftKey ? 0.25 : 1;
-        setAimTarget(aimStartAngle + (dx / width) * Math.PI * 0.42 * fine);
-      }
-      return;
-    }
-    if (orbitClick && e.pointerId === orbitClick.id) {
-      if (Math.hypot(e.clientX - orbitClick.x, e.clientY - orbitClick.y) > 8) {
-        orbitClick.moved = true;
-      }
+    if (!aimDragging || e.pointerId !== aimPointerId) return;
+    const dx = e.clientX - aimStartX;
+    const dy = e.clientY - aimStartY;
+    if (!aimDragMoved && Math.hypot(dx, dy) > 3) aimDragMoved = true;
+    if (aimDragMoved) {
+      // Relative drag: a full screen width is about 75°, and Shift is
+      // an even finer 25°. Clicks and the wheel cover larger changes.
+      const width = Math.max(320, window.innerWidth);
+      const fine = e.shiftKey ? 0.25 : 1;
+      setAimTarget(aimStartAngle + (dx / width) * Math.PI * 0.42 * fine);
     }
   }
 
+  function finishShotPointer(e) {
+    if (shotPointerId === null || e.pointerId !== shotPointerId) return false;
+    const held = performance.now() - app.chargeStart;
+    shotPointerId = null;
+    try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+    if (app.charging) {
+      // Ignore a quick click/double-click in Shot mode; holding is deliberate.
+      if (held > 220) {
+        releaseCharge();
+      } else {
+        cancelCharge();
+        if (performance.now() - lastShotTip > 4000) {
+          lastShotTip = performance.now();
+          toast('Hold the cloth to charge, then release to strike', 'info', 'Shot tool');
+        }
+      }
+    }
+    return true;
+  }
+
   function onScenePointerUp(e) {
+    if (finishShotPointer(e)) return;
     if (aimDragging && e.pointerId === aimPointerId) {
       const moved = aimDragMoved;
       aimDragging = false;
       aimPointerId = null;
       try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
-      // A click without a drag is a coarse aim at that spot.
       if (!moved) setAimTargetFromEvent(e);
-      return;
-    }
-    if (orbitClick && e.pointerId === orbitClick.id) {
-      const click = orbitClick;
-      orbitClick = null;
-      if (!click.moved && performance.now() - click.t < 650) setAimTargetFromEvent(e);
     }
   }
 
   function onScenePointerCancel(e) {
+    if (shotPointerId === e.pointerId) {
+      shotPointerId = null;
+      cancelCharge();
+      try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+      return;
+    }
     if (aimDragging && e.pointerId === aimPointerId) {
       aimDragging = false;
       aimPointerId = null;
       try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
     }
-    if (orbitClick && e.pointerId === orbitClick.id) orbitClick = null;
   }
 
   function onSceneDoubleClick(e) {
+    if (app.tool !== 'aim') return;
     if (app.phase !== 'aiming' || !isHumanTurn()) return;
     if (!aimPointFromEvent(e)) return;
     e.preventDefault();
@@ -1615,11 +1635,19 @@
   }
 
   function onWindowPointerUp(e) {
+    if (finishShotPointer(e)) return;
     if (aimDragging && e.pointerId === aimPointerId) {
       aimDragging = false;
       aimPointerId = null;
     }
-    if (orbitClick && e.pointerId === orbitClick.id) orbitClick = null;
+  }
+
+  function onSceneWheel(e) {
+    if (app.tool !== 'aim' || !isHumanTurn()) return;
+    e.preventDefault();
+    const fine = e.shiftKey ? 0.05 : 0.2;
+    const dir = e.deltaY < 0 ? 1 : -1;
+    setAimTarget(app.aimTarget + deg2rad(fine) * dir);
   }
 
   function onKeyDown(e) {
@@ -1633,10 +1661,12 @@
     } else if (e.code === 'ArrowRight') {
       e.preventDefault();
       nudgeAim(e.shiftKey ? 2 : 0.5);
-    } else if (e.key === 'a' || e.key === 'A') {
-      setCameraMode('aim');
-    } else if (e.key === 'o' || e.key === 'O') {
-      setCameraMode('orbit');
+    } else if (e.key === 'a' || e.key === 'A' || e.key === '1') {
+      setTool('aim');
+    } else if (e.key === 'o' || e.key === 'O' || e.key === '2') {
+      setTool('scene');
+    } else if (e.key === 's' || e.key === 'S' || e.key === '3') {
+      setTool('shot');
     } else if (e.key === 'r' || e.key === 'R') {
       resetSpin();
     } else if (e.key === 'l' || e.key === 'L') {
@@ -1673,14 +1703,18 @@
 
   function updateAimHint() {
     if (!dom.aimHint) return;
+    if (app.tool === 'scene') {
+      dom.aimHint.textContent = 'Scene tool · drag to orbit · wheel to zoom · switch to Aim to line up.';
+      return;
+    }
+    if (app.tool === 'shot') {
+      dom.aimHint.textContent = 'Shot tool · hold the cloth to charge · release to strike.';
+      return;
+    }
     if (app.aimLocked) {
-      dom.aimHint.textContent = app.cameraMode === 'aim'
-        ? 'Aim pinned · double-click the cloth or the pin to release.'
-        : 'Aim pinned · drag to orbit freely. Click the pin to release.';
-    } else if (app.cameraMode === 'aim') {
-      dom.aimHint.textContent = 'Drag to fine-aim · click to aim · double-click to pin.';
+      dom.aimHint.textContent = 'Aim pinned · double-click the cloth or the pin to release.';
     } else {
-      dom.aimHint.textContent = 'Click to aim · drag to orbit · double-click to pin.';
+      dom.aimHint.textContent = 'Drag to fine-aim · click to aim · scroll to nudge · double-click to pin.';
     }
   }
 
@@ -1698,10 +1732,7 @@
     const next = !!locked;
     if (next === app.aimLocked) return;
     app.aimLocked = next;
-    if (next) {
-      aimDragging = false;
-      orbitClick = null;
-    }
+    if (next) aimDragging = false;
     syncAimLockUI();
     if (!silent) {
       toast(next
@@ -1734,14 +1765,50 @@
     camera.lookAt(cameraLook);
   }
 
+  function syncToolUI() {
+    if (!dom.toolAim) return;
+    dom.toolAim.classList.toggle('is-on', app.tool === 'aim');
+    dom.toolScene.classList.toggle('is-on', app.tool === 'scene');
+    dom.toolShot.classList.toggle('is-on', app.tool === 'shot');
+    document.body.classList.toggle('is-shot', app.tool === 'shot');
+    updateAimHint();
+  }
+
+  function setTool(tool) {
+    if (tool !== 'aim' && tool !== 'scene' && tool !== 'shot') return;
+    if (tool === app.tool) {
+      if (tool === 'aim') recenterAimCamera();
+      return;
+    }
+    app.tool = tool;
+    if (tool !== 'aim' && app.aimLocked) {
+      app.aimLocked = false;
+      syncAimLockUI();
+    }
+    if (dom.lockAimBtn) dom.lockAimBtn.disabled = !isHumanTurn() || tool !== 'aim';
+    if (tool === 'scene') {
+      if (app.cameraMode !== 'orbit') setCameraMode('orbit');
+    } else if (app.cameraMode !== 'aim') {
+      setCameraMode('aim');
+    }
+    if (tool === 'shot') {
+      toast('Shot tool · hold the cloth to charge, release to strike', 'info', 'Mouse: Shot');
+    } else if (tool === 'scene') {
+      toast('Scene tool · drag to orbit, wheel or pinch to zoom', 'info', 'Mouse: Scene');
+    }
+    syncToolUI();
+    updateAimHint();
+  }
+
   function recenterAimCamera() {
+    if (app.tool !== 'aim') setTool('aim');
     if (app.cameraMode !== 'aim') {
       setCameraMode('aim');
-    } else {
-      app.aimCamAngle = normalizeAngle(app.aimTarget);
-      placeAimCamera();
-      updateAimHint();
+      return;
     }
+    app.aimCamAngle = normalizeAngle(app.aimTarget);
+    placeAimCamera();
+    updateAimHint();
   }
 
   function setCameraMode(mode) {
@@ -1755,8 +1822,6 @@
       app.cameraMode = 'aim';
       app.aimCamAngle = normalizeAngle(app.aimTarget);
       controls.enabled = false;
-      dom.camAim.classList.add('is-on');
-      dom.camOrbit.classList.remove('is-on');
       document.body.classList.remove('is-orbit');
       placeAimCamera();
     } else {
@@ -1765,8 +1830,6 @@
       if (app._orbitPos) camera.position.copy(app._orbitPos);
       if (app._orbitTarget) controls.target.copy(app._orbitTarget);
       controls.update();
-      dom.camOrbit.classList.add('is-on');
-      dom.camAim.classList.remove('is-on');
       document.body.classList.add('is-orbit');
     }
     updateAimHint();
@@ -1799,6 +1862,7 @@
     if (app.charging || !isHumanTurn()) return;
     app.charging = true;
     app.chargeStart = performance.now();
+    app.chargePrevPower = app.power;
     app.power = 0;
     dom.chargeBtn.classList.add('is-charging');
     updatePowerUI();
@@ -1814,6 +1878,14 @@
       updatePowerUI();
     }
     takeShot();
+  }
+
+  function cancelCharge() {
+    if (!app.charging) return;
+    app.charging = false;
+    dom.chargeBtn.classList.remove('is-charging');
+    app.power = app.chargePrevPower || 55;
+    updatePowerUI();
   }
 
   function updateCharge(now) {
@@ -1847,7 +1919,6 @@
     app.phase = 'rolling';
     app.aiThinking = false;
     aimDragging = false;
-    orbitClick = null;
     app.shot = {
       potted: [],
       firstContact: null,
@@ -2085,7 +2156,6 @@
     app.phase = 'aiming';
     app.aimLocked = false;
     aimDragging = false;
-    orbitClick = null;
     // Keep the player's chosen line after a shot. Only re-aim when the cue
     // ball itself was respotted in the D, where the old line is meaningless.
     if (shot.cuePotted && isHumanTurn()) {
@@ -2093,6 +2163,7 @@
       app.aimCamAngle = app.aimAngle;
       if (app.cameraMode === 'aim') placeAimCamera();
     }
+    if (app.tool === 'shot') setTool('aim');
     updateUI();
     if (app.mode === 'ai' && rules.current === 1) scheduleAI();
   }
@@ -2398,12 +2469,11 @@
     app.aimCamAngle = app.aimAngle;
     app.aimLocked = false;
     aimDragging = false;
-    orbitClick = null;
     resetSpin();
     updatePowerUI();
     updateAimReadout();
     updateUI();
-    setCameraMode('aim');
+    setTool('aim');
     if (app.cameraMode === 'aim') placeAimCamera();
     if (count) {
       banner(`Frame ${pad2(app.frameNo)}`, 'Rack them up', `${playerName(rules.current)} to break`);
@@ -2460,6 +2530,7 @@
     updateStatus();
     updateShootAvailability();
     syncAimLockUI();
+    syncToolUI();
 
     const ai = app.mode === 'ai' && rules.current === 1;
     dom.powerSlider.disabled = !isHumanTurn();
@@ -2552,7 +2623,7 @@
     dom.powerSlider.disabled = !human;
     dom.chargeBtn.disabled = !human;
     dom.elevSlider.disabled = !human;
-    if (dom.lockAimBtn) dom.lockAimBtn.disabled = !human;
+    if (dom.lockAimBtn) dom.lockAimBtn.disabled = !human || app.tool !== 'aim';
     if (dom.recenterBtn) dom.recenterBtn.disabled = !human;
   }
 
@@ -2890,8 +2961,8 @@
       toast('View re-centred behind the cue ball', 'info', 'Camera');
     });
 
-    document.querySelectorAll('[data-cam]').forEach((btn) => {
-      btn.addEventListener('click', () => setCameraMode(btn.dataset.cam));
+    document.querySelectorAll('[data-tool]').forEach((btn) => {
+      btn.addEventListener('click', () => setTool(btn.dataset.tool));
     });
     document.querySelectorAll('[data-nudge]').forEach((btn) => {
       btn.addEventListener('click', () => nudgeAim(Number(btn.dataset.nudge)));
@@ -3138,6 +3209,7 @@
     takeShot,
     runSelfTests,
     setCameraMode,
+    setTool,
     respotBall,
     resetSpin
   };

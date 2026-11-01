@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T00:40:57Z",
-    "durationSeconds": 3351.8,
-    "durationHuman": "55m 52s",
+    "completedAt": "2026-11-01T00:59:54Z",
+    "durationSeconds": 4489.1,
+    "durationHuman": "1h 14m 49s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 942539,
-    "output": 131558,
-    "reasoning": 219834,
-    "cacheRead": 40724096,
+    "input": 957991,
+    "output": 149739,
+    "reasoning": 261330,
+    "cacheRead": 55996800,
     "cacheWrite": 1277,
-    "total": 1293931,
-    "totalWithCache": 42019304,
+    "total": 1369060,
+    "totalWithCache": 57367137,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -49,12 +49,13 @@
     "ballDiameterMm": 60,
     "pockets": 6,
     "cameraModes": [
-      "cue view",
-      "orbit table"
+      "aim (cue view)",
+      "orbit (scene)"
     ],
     "controls": [
-      "click/drag aim",
-      "double-click aim pin",
+      "Aim tool: drag/click/wheel + sticky pin",
+      "Scene tool: orbit + zoom",
+      "Shot tool: hold cloth to charge, release",
       "power slider",
       "hold-to-charge",
       "cue-ball spin pad",
@@ -79,20 +80,25 @@
     "offlineAfterCdn": true,
     "mouseOnly": true,
     "ballSizeNote": "Slightly oversized at 60 mm for readability; brightened colours with a warm Fresnel rim light.",
-    "aiming": "Stable Cue view; relative drag fine-aim; eased click-to-aim; sticky pin; one-mouse Strike."
+    "aiming": "Aim tool for relative drag/click/wheel; Scene for orbit; Shot for hold-and-release; stable camera; sticky pin; one mouse.",
+    "mouseTools": [
+      "aim",
+      "scene",
+      "shot"
+    ]
   },
   "source": {
     "index.html": {
-      "bytes": 16178,
-      "lines": 301
+      "bytes": 16433,
+      "lines": 302
     },
     "style.css": {
-      "bytes": 34231,
-      "lines": 1237
+      "bytes": 34332,
+      "lines": 1239
     },
     "script.js": {
-      "bytes": 118041,
-      "lines": 3150
+      "bytes": 120490,
+      "lines": 3222
     }
   },
   "artifacts": [
@@ -133,11 +139,18 @@
       "sticky aim pin (double-click)",
       "one-mouse Strike",
       "60 mm ball pot",
-      "rim-light colour readability"
+      "rim-light colour readability",
+      "Aim/Scene/Shot mouse tool switch",
+      "Scene drag orbits without changing aim",
+      "Shot hold-to-charge fires and returns to Aim",
+      "quick click in Shot mode cancels with a hint",
+      "Aim/Scene/Shot mouse tools",
+      "Scene orbits without changing aim",
+      "quick click in Shot mode cancels"
     ],
     "consoleErrors": 0,
     "liveDemo": "https://somphol.github.io/snooker-3d/",
-    "liveVerifiedAt": "2026-11-01T00:40:57Z",
+    "liveVerifiedAt": "2026-11-01T00:59:54Z",
     "liveConsoleErrors": 0,
     "localConsoleErrors": 0
   },

@@ -25,7 +25,7 @@ You can also open `index.html` directly, though some browsers are stricter about
 - **All 22 balls**: cue ball, 15 reds racked in a triangle, and yellow, green, brown, blue, pink and black on their proper spots.
 - **Real rigid-body physics** with Cannon.js: sphere–sphere momentum transfer, cushion restitution, cloth friction, rolling resistance and pocket capture.
 - **Aim like a player**: a dotted cue path, a ghost ball at first contact, a target-ball line and a cue-ball deflection line. The guide turns amber when the first ball is not on.
-- **Two camera styles**: a steady *Cue view* behind the cue ball, or a free *Orbit table* view for reading the whole rack.
+- **Three mouse tools**: *Aim* to drag/click/scroll the shot line, *Scene* to orbit and zoom, and *Shot* to hold anywhere on the cloth and release to strike. One mouse does everything.
 - **Power, spin and elevation**: slider or hold-to-charge stroke meter, a draggable cue-ball contact dot for follow, screw and left/right english, and a cue elevation control for gentle jump/masse shots.
 - **A referee**: alternates reds and colours, enforces the clearance order, respots colours, detects scratches, wrong-ball first contact, misses and illegal pots, and awards 4–7 point penalties.
 - **Two-player or AI**: the computer chooses pots by ghost-ball geometry, falls back to a safe contact, and plays with a little human error.
@@ -41,25 +41,18 @@ The HUD always shows the ball on, the reds left, the points left, the current br
 
 ### Controls
 
-| Input | Action |
+| Tool | Mouse action |
 | --- | --- |
-| **Drag on the cloth** | Fine-aim; the cue eases toward the angle |
-| **Click on the cloth** | Move the aim to that spot with a smooth glide |
-| **Double-click the cloth** | Pin / release the aim so it cannot move |
-| **Click Strike** | Play the shot with the slider power |
-| **Hold Hold-to-charge, release** | Charge with the mouse and strike |
-| Left-drag (Orbit table) | Orbit the camera |
-| Mouse wheel / pinch | Zoom |
-| **Cue view** / **Orbit table** | Switch camera style |
-| Aim nudge buttons or `←` / `→` | Fine-tune by 0.5° (`Shift` = 2°) |
-| Drag the dot on the cue-ball face | Apply follow, screw or side spin |
-| Cue elevation slider | Raise the cue butt for jump/masse shots |
-| `A` / `O` | Cue view / orbit |
-| `L` / `C` | Pin aim / re-centre the view |
-| `R` | Centre the spin dot |
-| **New frame** | Rack a fresh frame |
+| **Aim** | Drag for fine aim · click to move the line · scroll to nudge · double-click to pin |
+| **Scene** | Drag to orbit · scroll or pinch to zoom |
+| **Shot** | Hold the cloth to charge · release to strike |
+| Any tool | Click **Strike**, or hold **Hold-to-charge** and release |
+| Aim tool | Nudge buttons or `←` / `→` fine-tune by 0.5° (`Shift` = 2°) |
+| Aim tool | Drag the cue-ball spin dot for follow, screw or english |
+| Shot control | Cue elevation slider for jump/masse shots |
+| Keyboard | `A` / `O` / `S` tools · `L` pin · `C` re-centre · `R` spin · `←`/`→` aim |
 
-**One mouse, no keyboard required.** Drag on the cloth for fine aiming, or click to move the line — the cue eases toward the new angle rather than snapping, at a deliberately slow top speed. Shift-drag is extra-fine. Double-click to pin the line, set power with the slider, then click **Strike**. The camera holds its angle while you aim, so moving the mouse to the Strike button can never swing the table or change the shot. The balls are rendered slightly oversized with a warm rim light so every colour, including the black, stays readable on the baize.
+**One mouse, no keyboard required.** Pick **Aim**, **Scene** or **Shot** from the mouse-tool switch. In Aim, drag for fine adjustment, click to move the line, or scroll for a nudge — the cue eases toward the target at a deliberately controlled speed. In Scene, the mouse moves the camera. In Shot, the aim is frozen: hold anywhere on the cloth to charge, then release. The camera holds its angle while you aim, so moving the mouse to the Strike button can never swing the table or change the shot. The balls are rendered slightly oversized with a warm rim light so every colour, including the black, stays readable on the baize.
 
 The dotted line is the cue ball's path. The wireframe sphere is the ghost ball at first contact. The thin gold line is where the object ball will go; the faint white line is the cue ball's tangent. If the first ball is not the ball on, the guide glows amber.
 
@@ -117,7 +110,7 @@ Stats are written to `localStorage` under `snooker3d_stats_v1` and survive reloa
 | Rendering | Three.js r128, physically based materials, ACES filmic tone mapping, PCF soft shadows, procedural canvas cloth/wood/floor textures |
 | Physics | Cannon.js 0.6.2, 120 Hz fixed step with sub-stepping, SAP broadphase, 24 solver iterations |
 | Table | 3.569 m × 1.778 m playing area, 60 mm balls (slightly oversized for legibility), 4.5 in pockets, baulk line 0.737 m from the baulk cushion, 0.292 m D |
-| Aim | 2D ray/circle prediction; stable Cue view; relative drag fine-aim; eased click-to-aim; ghost ball, target and tangent lines |
+| Aim | Aim/Scene/Shot mouse tools; stable Cue view; relative drag; eased click-to-aim; wheel nudge; sticky pin; ghost ball, target and tangent lines |
 | Rules | Pure-ish `resolveShot()` referee function with an explicit ball-on state |
 | AI | Ghost-ball pot search over every legal target and pocket, path checks, pocket-based power, a safe-contact fallback and small aiming error |
 | Persistence | `localStorage` with a versioned, sanitised JSON schema |

@@ -59,6 +59,7 @@ button:focus-visible, input:focus-visible {
 #stage canvas { touch-action: none; cursor: crosshair; }
 body.is-orbit #stage canvas { cursor: grab; }
 body.is-orbit #stage canvas:active { cursor: grabbing; }
+body.is-shot #stage canvas { cursor: cell; }
 
 .vignette {
   position: fixed;
@@ -576,6 +577,7 @@ body.is-muted .ico-sound-off { display: block; }
   color: var(--brass-hi);
   box-shadow: 0 0 0 1px rgba(201, 164, 92, 0.26) inset;
 }
+.segmented-3 { grid-template-columns: repeat(3, 1fr); }
 
 .nudge-row {
   display: grid;

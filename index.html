@@ -124,7 +124,7 @@
 
     <section class="control-block">
       <div class="control-label">
-        <span>Aim</span>
+        <span>Shot line</span>
         <span class="label-end">
           <b id="aim-readout">0.0°</b>
           <button class="mini-help" id="btn-lock-aim" title="Pin the aim (or double-click the cloth)" aria-label="Pin aim" aria-pressed="false">
@@ -135,9 +135,10 @@
           </button>
         </span>
       </div>
-      <div class="segmented" role="group" aria-label="Camera mode">
-        <button id="cam-orbit" data-cam="orbit">Orbit table</button>
-        <button id="cam-aim" data-cam="aim" class="is-on">Cue view</button>
+      <div class="segmented segmented-3" role="group" aria-label="Mouse tool">
+        <button id="tool-aim" data-tool="aim" class="is-on" title="Mouse: drag/click/scroll to aim">Aim</button>
+        <button id="tool-scene" data-tool="scene" title="Mouse: drag to orbit, wheel to zoom">Scene</button>
+        <button id="tool-shot" data-tool="shot" title="Mouse: hold the cloth to charge, release to strike">Shot</button>
       </div>
       <div class="nudge-row">
         <button class="nudge" data-nudge="-2" title="Aim 2° left">&#8634; 2°</button>
@@ -145,7 +146,7 @@
         <button class="nudge" data-nudge="0.5" title="Aim ½° right">+ ½°</button>
         <button class="nudge" data-nudge="2" title="Aim 2° right">2° &#8635;</button>
       </div>
-      <p class="hint" id="aim-hint">Drag to fine-aim · click to aim · double-click to pin.</p>
+      <p class="hint" id="aim-hint">Drag to fine-aim · click to aim · scroll to nudge · double-click to pin.</p>
     </section>
 
     <section class="control-block">
@@ -215,7 +216,7 @@
         <section>
           <h3><span>01</span> Aim</h3>
           <p><b>Drag on the cloth for fine aim</b>, or click to move the line. The cue eases toward the new angle instead of snapping. The dotted line shows its path; the ghost ball marks first contact and the thin line shows where the target ball will go.</p>
-          <p>Use <b>Cue view</b> for a steady view behind the cue ball, or <b>Orbit table</b> to inspect the whole rack. <b>Double-click the cloth</b> (or the pin button beside the angle) to pin the aim so mouse movement cannot change it. The nudge buttons and <kbd>←</kbd> <kbd>→</kbd> fine-tune by fractions of a degree.</p>
+          <p>Choose the mouse tool: <b>Aim</b> to drag, click or scroll the shot line; <b>Scene</b> to drag the camera and wheel-zoom; <b>Shot</b> to hold the cloth, charge and release. <b>Double-click the cloth</b> (or the pin beside the angle) to pin the aim so it cannot move. The nudge buttons and <kbd>←</kbd> <kbd>→</kbd> remain optional fine tuning.</p>
         </section>
         <section>
           <h3><span>02</span> Strike</h3>
@@ -234,11 +235,11 @@
         </section>
       </div>
       <div class="shortcut-row">
-        <span><b>Mouse</b> click / drag to aim</span>
+        <span><b>Aim</b> drag / click / scroll</span>
+        <span><b>Scene</b> drag / wheel</span>
+        <span><b>Shot</b> hold cloth, release</span>
         <span><b>Double-click</b> pin aim</span>
         <span><b>Click Strike</b> or hold charge</span>
-        <span><kbd>←</kbd><kbd>→</kbd> fine aim</span>
-        <span><kbd>Space</kbd> optional strike</span>
         <span><kbd>R</kbd> reset spin</span>
       </div>
     </article>

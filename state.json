@@ -1,0 +1,129 @@
+{
+  "project": "snooker-3d",
+  "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
+  "build": {
+    "startedAt": "2026-10-31T23:45:05Z",
+    "completedAt": "2026-11-01T00:13:42Z",
+    "durationSeconds": 1716.6,
+    "durationHuman": "28m 37s",
+    "timezone": "UTC"
+  },
+  "tokens": {
+    "input": 402001,
+    "output": 89010,
+    "reasoning": 131505,
+    "cacheRead": 12573056,
+    "cacheWrite": 1277,
+    "total": 622516,
+    "totalWithCache": 13196849,
+    "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
+  },
+  "cost": {
+    "usd": 0.0,
+    "note": "As reported by the OpenCode session record."
+  },
+  "sessionId": "ses_e6ba5bd0cffeNxKRA16F47omGg",
+  "model": {
+    "name": "DeepSeek V4.1 Flash",
+    "providerID": "opencode-go",
+    "modelID": "deepseek-v4.1-flash"
+  },
+  "harness": {
+    "name": "OpenCode",
+    "version": "2.2.5"
+  },
+  "repository": "https://github.com/somphol/snooker-3d",
+  "pages": "https://somphol.github.io/snooker-3d/",
+  "game": {
+    "balls": 22,
+    "reds": 15,
+    "colours": [
+      "yellow",
+      "green",
+      "brown",
+      "blue",
+      "pink",
+      "black"
+    ],
+    "table": "12 ft \u00d7 6 ft playing area (3.569 m \u00d7 1.778 m)",
+    "ballDiameterMm": 52.5,
+    "pockets": 6,
+    "cameraModes": [
+      "aim lock",
+      "orbit table"
+    ],
+    "controls": [
+      "power slider",
+      "hold-to-charge",
+      "cue-ball spin pad",
+      "cue elevation",
+      "fine aim nudges"
+    ],
+    "referee": [
+      "red/colour alternation",
+      "clearance order",
+      "fouls 4\u20137",
+      "respot colours",
+      "respot cue ball",
+      "respot black tie-break"
+    ],
+    "ai": true,
+    "statsExport": "snooker_3d_stats.json",
+    "localStorageKeys": [
+      "snooker3d_stats_v1",
+      "snooker3d_muted"
+    ],
+    "responsive": true,
+    "offlineAfterCdn": true
+  },
+  "source": {
+    "index.html": {
+      "bytes": 15058,
+      "lines": 289
+    },
+    "style.css": {
+      "bytes": 33684,
+      "lines": 1221
+    },
+    "script.js": {
+      "bytes": 108851,
+      "lines": 2859
+    }
+  },
+  "artifacts": [
+    "index.html",
+    "style.css",
+    "script.js",
+    "favicon.svg",
+    "README.md",
+    "STATE.md",
+    "state.json",
+    "screenshot.png",
+    "screenshot-orbit.png",
+    "screenshot-stats.png",
+    "screenshot-victory.png",
+    "screenshot-mobile.png",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    ".nojekyll",
+    ".gitignore"
+  ],
+  "validation": {
+    "selfTests": "15/15 passing in headless Chrome",
+    "tested": [
+      "ball rack and geometry",
+      "aim guide",
+      "spin follow vs screw",
+      "red pot",
+      "colour respot",
+      "scratch foul and cue respot",
+      "AI legal break and foul handling",
+      "charge/release",
+      "stats export/import round-trip",
+      "frame result and new frame",
+      "desktop and portrait layouts"
+    ],
+    "consoleErrors": 0
+  },
+  "credits": "Built with OpenCode 2.2.5 and DeepSeek V4.1 Flash (opencode-go/deepseek-v4.1-flash). Three.js by mrdoob and contributors; Cannon.js by Stefan Hedman and contributors; OrbitControls and Google Fonts under their respective licences."
+}

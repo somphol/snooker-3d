@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0705">
+  <title>The Mahogany Room · 3D Snooker</title>
+  <meta name="description" content="A complete 3D snooker game in the browser: 22 balls, realistic physics, spin, a referee and local career stats.">
+  <meta property="og:title" content="The Mahogany Room · 3D Snooker">
+  <meta property="og:description" content="A complete 22-ball 3D snooker game with realistic cushion physics, cue-ball spin, a full referee, an AI opponent and a portable career book.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://somphol.github.io/snooker-3d/screenshot.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage" aria-label="3D snooker table"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ── Loading ─────────────────────────────────────────── -->
+  <div id="loader" class="loader">
+    <div class="loader-inner">
+      <div class="loader-crest"><span>147</span></div>
+      <p class="eyebrow">The Mahogany Room</p>
+      <h1>Snooker<span class="dot">·</span>3D</h1>
+      <div class="loader-bar"><i></i></div>
+      <p class="loader-note" id="loader-note">Racking the balls…</p>
+    </div>
+  </div>
+
+  <!-- ── Top bar ─────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 44 44" width="44" height="44">
+          <circle cx="22" cy="22" r="20" fill="none" stroke="currentColor" stroke-width="1"/>
+          <circle cx="22" cy="22" r="13" fill="none" stroke="currentColor" stroke-width=".6" opacity=".55"/>
+          <circle cx="22" cy="22" r="4.5" fill="currentColor"/>
+          <path d="M22 2v7M22 35v7M2 22h7M35 22h7" stroke="currentColor" stroke-width=".8" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="brand-copy">
+        <h1>The Mahogany Room</h1>
+        <p>Snooker · 3D</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="frame-chip" title="Frame number">
+        <span>Frame</span><b id="frame-number">01</b>
+      </div>
+      <button class="tb-btn" id="btn-mode" title="Switch between two players and the computer">
+        <span class="tb-ico" aria-hidden="true">◉</span><span id="mode-label">2 Players</span>
+      </button>
+      <button class="tb-btn" id="btn-new-frame-top" title="Rack a fresh frame">New frame</button>
+      <button class="tb-btn" id="btn-rules" title="How to play">Rules</button>
+      <button class="tb-btn" id="btn-stats" title="Career statistics">Stats</button>
+      <button class="tb-btn ico-only" id="btn-sound" title="Sound on/off" aria-label="Toggle sound">
+        <svg class="ico-sound-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8 8 0 010 12"/></svg>
+        <svg class="ico-sound-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Scoreboard ──────────────────────────────────────── -->
+  <aside class="panel scoreboard" id="scoreboard">
+    <div class="panel-head">
+      <span>Match</span>
+      <span class="panel-head-note" id="match-note">Best of one</span>
+    </div>
+
+    <div class="player is-active" id="player-row-0">
+      <div class="player-medal">P1</div>
+      <div class="player-body">
+        <div class="player-name">Player One <span class="turn-badge">at table</span></div>
+        <div class="player-meta"><span id="p1-wins">0</span> career wins</div>
+      </div>
+      <div class="player-score" id="score-0">0</div>
+    </div>
+
+    <div class="player" id="player-row-1">
+      <div class="player-medal">P2</div>
+      <div class="player-body">
+        <div class="player-name" id="p2-name">Player Two <span class="turn-badge">at table</span></div>
+        <div class="player-meta"><span id="p2-wins">0</span> career wins</div>
+      </div>
+      <div class="player-score" id="score-1">0</div>
+    </div>
+
+    <div class="break-strip">
+      <div><span>Break</span><b id="break-points">0</b></div>
+      <div><span>High break</span><b id="high-break">0</b></div>
+    </div>
+
+    <div class="table-stats">
+      <div class="stat">
+        <span>Ball on</span>
+        <strong id="ball-on"><i class="swatch red"></i><em>Red</em></strong>
+      </div>
+      <div class="stat">
+        <span>Reds left</span>
+        <strong id="reds-left">15</strong>
+      </div>
+      <div class="stat">
+        <span>Points left</span>
+        <strong id="points-left">147</strong>
+      </div>
+    </div>
+
+    <div class="rack" id="rack" aria-label="Balls remaining"></div>
+  </aside>
+
+  <!-- ── Shot controls ───────────────────────────────────── -->
+  <aside class="panel controls" id="controls">
+    <div class="panel-head">
+      <span>Shot control</span>
+      <button class="mini-help" id="btn-help" title="Quick guide">?</button>
+    </div>
+
+    <section class="control-block">
+      <div class="control-label"><span>Aim</span><b id="aim-readout">0.0°</b></div>
+      <div class="segmented" role="group" aria-label="Camera mode">
+        <button id="cam-orbit" data-cam="orbit">Orbit table</button>
+        <button id="cam-aim" data-cam="aim" class="is-on">Aim lock</button>
+      </div>
+      <div class="nudge-row">
+        <button class="nudge" data-nudge="-2" title="Aim 2° left">&#8634; 2°</button>
+        <button class="nudge" data-nudge="-0.5" title="Aim ½° left">− ½°</button>
+        <button class="nudge" data-nudge="0.5" title="Aim ½° right">+ ½°</button>
+        <button class="nudge" data-nudge="2" title="Aim 2° right">2° &#8635;</button>
+      </div>
+      <p class="hint" id="aim-hint">Move over the cloth to aim. Drag to orbit in table view.</p>
+    </section>
+
+    <section class="control-block">
+      <div class="control-label"><span>Power</span><b id="power-readout">55%</b></div>
+      <div class="power-wrap">
+        <input type="range" id="power-slider" min="0" max="100" step="1" value="55" aria-label="Shot power">
+        <div class="power-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <button class="charge-btn" id="btn-charge">
+        <span class="charge-fill" id="charge-fill"></span>
+        <span class="charge-text">Hold to charge<span class="charge-sub">release to strike</span></span>
+      </button>
+    </section>
+
+    <section class="control-block spin-block">
+      <div class="control-label"><span>Cue ball spin</span><b id="spin-readout">Centre</b></div>
+      <div class="spin-stage">
+        <canvas id="spin-pad" width="320" height="320" aria-label="Cue ball spin control. Drag the dot to apply spin."></canvas>
+        <div class="spin-axis top">Top</div>
+        <div class="spin-axis bottom">Back</div>
+        <div class="spin-axis left">L</div>
+        <div class="spin-axis right">R</div>
+        <button class="spin-reset" id="spin-reset" title="Centre the cue ball">Centre</button>
+      </div>
+    </section>
+
+    <section class="control-block">
+      <div class="control-label"><span>Cue elevation</span><b id="elev-readout">4°</b></div>
+      <input type="range" id="elev-slider" min="0" max="45" step="1" value="4" aria-label="Cue elevation">
+    </section>
+
+    <button class="shoot-btn" id="btn-shoot">
+      <span>Strike</span>
+      <small>Space</small>
+    </button>
+  </aside>
+
+  <!-- ── Status and toasts ───────────────────────────────── -->
+  <div class="status-pill" id="status-pill">
+    <span class="status-dot"></span><span id="status-text">Player One · on red</span>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-kicker" id="toast-kicker">Referee</span>
+    <span class="toast-message" id="toast-message"></span>
+  </div>
+
+  <div class="event-banner" id="event-banner" aria-hidden="true">
+    <span id="event-kicker"></span>
+    <strong id="event-title"></strong>
+    <em id="event-sub"></em>
+  </div>
+
+  <div class="turn-flash" id="turn-flash"></div>
+
+  <footer class="credit">
+    Built with <strong>OpenCode</strong> <span>×</span> <strong>DeepSeek V4.1 Flash</strong>
+  </footer>
+
+  <!-- ── Modals ──────────────────────────────────────────── -->
+  <div class="modal-backdrop" id="modal-rules" aria-hidden="true">
+    <article class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+      <button class="modal-close" data-close="modal-rules" aria-label="Close">×</button>
+      <p class="eyebrow">The rule book</p>
+      <h2 id="rules-title">How to play</h2>
+      <div class="rule-grid">
+        <section>
+          <h3><span>01</span> Aim</h3>
+          <p>Move the pointer across the cloth to line up the cue ball. The dotted line shows its path; the ghost ball marks first contact and the thin line shows where the target ball will go.</p>
+          <p>Use <b>Aim lock</b> for a low view behind the cue ball, or <b>Orbit table</b> to inspect the whole rack. The nudge buttons and <kbd>←</kbd> <kbd>→</kbd> fine-tune by fractions of a degree.</p>
+        </section>
+        <section>
+          <h3><span>02</span> Strike</h3>
+          <p>Set power with the slider, or <b>hold</b> the charge button or <kbd>Space</kbd> and release to strike. Elevation lifts the butt of the cue for gentle jump and masse shots.</p>
+          <p>Drag the dot on the cue-ball face for follow (top), screw (back) and side spin. Right english also curves the cue ball slightly through the cloth.</p>
+        </section>
+        <section>
+          <h3><span>03</span> The frame</h3>
+          <p>Pot a red, then any colour; colours are respotted while reds remain. When the reds are gone, clear the colours in order: yellow, green, brown, blue, pink, black.</p>
+          <p>A potted red is worth 1, colours 2–7. A legal pot keeps you at the table. Miss legally and the turn passes; foul and your opponent receives 4–7 points.</p>
+        </section>
+        <section>
+          <h3><span>04</span> Fouls</h3>
+          <p>Potting the cue ball, striking the wrong ball first, striking nothing, or potting a ball that is not on all concede a penalty of at least four points. The incoming player takes the table with the cue ball respotted where needed.</p>
+          <p>The frame ends when the black is potted. Export your career from the Stats panel to carry it between devices.</p>
+        </section>
+      </div>
+      <div class="shortcut-row">
+        <span><kbd>Space</kbd> charge / strike</span>
+        <span><kbd>←</kbd><kbd>→</kbd> fine aim</span>
+        <span><kbd>A</kbd> aim lock</span>
+        <span><kbd>O</kbd> orbit</span>
+        <span><kbd>R</kbd> reset spin</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="modal-backdrop" id="modal-stats" aria-hidden="true">
+    <article class="modal stats-modal" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+      <button class="modal-close" data-close="modal-stats" aria-label="Close">×</button>
+      <p class="eyebrow">The members' book</p>
+      <h2 id="stats-title">Career statistics</h2>
+      <div class="career-grid">
+        <div><span>Matches</span><b id="stat-matches">0</b></div>
+        <div><span>Player One wins</span><b id="stat-p1">0</b></div>
+        <div><span>Player Two wins</span><b id="stat-p2">0</b></div>
+        <div><span>Computer wins</span><b id="stat-ai">0</b></div>
+        <div><span>Highest break</span><b id="stat-high">0</b></div>
+        <div><span>Centuries</span><b id="stat-centuries">0</b></div>
+        <div><span>Balls potted</span><b id="stat-pots">0</b></div>
+        <div><span>Frames played</span><b id="stat-frames">0</b></div>
+      </div>
+      <p class="stats-note">Saved automatically in this browser. Export the little black book to move your record across devices.</p>
+      <div class="stats-actions">
+        <button class="brass-btn" id="btn-export">💾 Export game data</button>
+        <button class="ghost-btn" id="btn-import">📂 Import game data</button>
+        <button class="text-btn" id="btn-reset-stats">Reset career</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="stats-filename">snooker_3d_stats.json</p>
+    </article>
+  </div>
+
+  <div class="modal-backdrop" id="modal-result" aria-hidden="true">
+    <article class="modal result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title">
+      <p class="eyebrow">Frame complete</p>
+      <div class="result-cup" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M18 8h28v10a14 14 0 01-28 0V8z"/>
+          <path d="M18 12h-7a9 9 0 009 9M46 12h7a9 9 0 01-9 9"/>
+          <path d="M32 32v12M24 50h16M20 56h24"/>
+        </svg>
+      </div>
+      <h2 id="result-title">Player One wins</h2>
+      <p class="result-score" id="result-score">0 — 0</p>
+      <p class="result-detail" id="result-detail">A fine frame. Highest break 0.</p>
+      <div class="result-actions">
+        <button class="brass-btn" id="btn-new-frame">Rack a new frame</button>
+        <button class="ghost-btn" id="btn-result-close">Admire the table</button>
+      </div>
+    </article>
+  </div>
+
+  <div id="selftest" hidden></div>
+
+  <!-- ── Libraries ───────────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

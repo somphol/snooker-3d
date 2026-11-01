@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T00:13:42Z",
-    "durationSeconds": 1716.6,
-    "durationHuman": "28m 37s",
+    "completedAt": "2026-11-01T00:15:53Z",
+    "durationSeconds": 1847.5,
+    "durationHuman": "30m 47s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 402001,
-    "output": 89010,
-    "reasoning": 131505,
-    "cacheRead": 12573056,
+    "input": 412246,
+    "output": 94638,
+    "reasoning": 134617,
+    "cacheRead": 14969856,
     "cacheWrite": 1277,
-    "total": 622516,
-    "totalWithCache": 13196849,
+    "total": 641501,
+    "totalWithCache": 15612634,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -123,7 +123,10 @@
       "frame result and new frame",
       "desktop and portrait layouts"
     ],
-    "consoleErrors": 0
+    "consoleErrors": 0,
+    "liveDemo": "https://somphol.github.io/snooker-3d/",
+    "liveVerifiedAt": "2026-11-01T00:15:53Z",
+    "liveConsoleErrors": 0
   },
   "credits": "Built with OpenCode 2.2.5 and DeepSeek V4.1 Flash (opencode-go/deepseek-v4.1-flash). Three.js by mrdoob and contributors; Cannon.js by Stefan Hedman and contributors; OrbitControls and Google Fonts under their respective licences."
 }

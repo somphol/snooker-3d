@@ -1,10 +1,21 @@
+<div align="center">
+
+<img src="docs/social-card.png" alt="The Mahogany Room — a complete 3D snooker game with physics, spin, a referee, and AI" width="100%" />
+
 # The Mahogany Room · 3D Snooker
 
-A complete, single-table **3D snooker game** in the browser. Twenty-two balls, real cushion physics, cue-ball spin, a referee who knows the rules, a computer opponent, and a career book you can carry between devices.
+**3D Snooker, Fully Refereed**
 
-![The Mahogany Room](screenshot.png)
+Twenty-two balls, real cushion physics, cue-ball spin, a referee who knows the rules, and a computer opponent.
 
-**Live demo:** <https://somphol.github.io/snooker-3d/>
+[![Live demo](https://img.shields.io/badge/live_demo-online-d4a373?style=flat-square)](https://somphol.github.io/snooker-3d/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-d4a373?style=flat-square)](LICENSE)
+
+**[Try it live →](https://somphol.github.io/snooker-3d/)**
+
+</div>
+
+---
 
 ## Play
 

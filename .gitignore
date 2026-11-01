@@ -5,3 +5,8 @@ __pycache__/
 test-shot.png
 shot-*.png
 dump.html
+
+Thumbs.db
+_site/
+node_modules/
+.env

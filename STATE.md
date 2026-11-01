@@ -4,8 +4,8 @@
 | --- | --- |
 | Project | The Mahogany Room · 3D Snooker (`snooker-3d`) |
 | Started | 2026-10-31 23:45:05 UTC |
-| Packaged | 2026-11-01 00:38:45 UTC |
-| Duration | **53m 40s** (3,220 seconds) |
+| Packaged | 2026-11-01 00:40:57 UTC |
+| Duration | **55m 52s** (3,351 seconds) |
 | Harness | OpenCode 2.2.5 |
 | Model | DeepSeek V4.1 Flash (`opencode-go/deepseek-v4.1-flash`) |
 | Session | `ses_e6ba5bd0cffeNxKRA16F47omGg` |
@@ -16,15 +16,15 @@
 
 | Metric | Tokens |
 | --- | ---: |
-| Input | 939,163 |
-| Output | 127,154 |
-| Reasoning | 214,605 |
-| **Total (input + output + reasoning)** | **1,280,922** |
-| Cache read | 36,563,584 |
+| Input | 942,539 |
+| Output | 131,558 |
+| Reasoning | 219,834 |
+| **Total (input + output + reasoning)** | **1,293,931** |
+| Cache read | 40,724,096 |
 | Cache write | 1,277 |
-| Total including cache | 37,845,783 |
+| Total including cache | 42,019,304 |
 
-> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 00:38:45 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
+> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 00:40:57 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
 
 ## What was built
 

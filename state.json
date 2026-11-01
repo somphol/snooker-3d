@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T00:38:45Z",
-    "durationSeconds": 3220.1,
-    "durationHuman": "53m 40s",
+    "completedAt": "2026-11-01T00:40:57Z",
+    "durationSeconds": 3351.8,
+    "durationHuman": "55m 52s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 939163,
-    "output": 127154,
-    "reasoning": 214605,
-    "cacheRead": 36563584,
+    "input": 942539,
+    "output": 131558,
+    "reasoning": 219834,
+    "cacheRead": 40724096,
     "cacheWrite": 1277,
-    "total": 1280922,
-    "totalWithCache": 37845783,
+    "total": 1293931,
+    "totalWithCache": 42019304,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -137,7 +137,7 @@
     ],
     "consoleErrors": 0,
     "liveDemo": "https://somphol.github.io/snooker-3d/",
-    "liveVerifiedAt": "2026-11-01T00:38:45Z",
+    "liveVerifiedAt": "2026-11-01T00:40:57Z",
     "liveConsoleErrors": 0,
     "localConsoleErrors": 0
   },

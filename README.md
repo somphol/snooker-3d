@@ -23,6 +23,9 @@ You can also open `index.html` directly, though some browsers are stricter about
 
 - **A full 12 ft × 6 ft table** at correct proportions: mahogany frame, brass pocket rims, baize cloth, six pocket drop holes, baulk line, the D, and all six colour spots.
 - **All 22 balls**: cue ball, 15 reds racked in a triangle, and yellow, green, brown, blue, pink and black on their proper spots.
+- **Ball guide with points**: seven colour buttons labelled **Red 1 pt** through **Black 7 pt**. Click one to make every ball of that colour pulse with a bright ring and coloured halo; click again to clear.
+- **Readable at your size**: **A− / A+** in the shot-control header scales the whole interface from 85% to 130% and remembers the setting.
+- **Ruling history**: the book icon or the **Referee’s call** panel opens the referee’s book, newest first, with up to 120 saved calls and a clear button.
 - **Real rigid-body physics** with Cannon.js: sphere–sphere momentum transfer, cushion restitution, cloth friction, rolling resistance and pocket capture.
 - **Aim like a player**: a dotted cue path, a ghost ball at first contact, a target-ball line and a cue-ball deflection line. The guide turns amber when the first ball is not on.
 - **Three mouse tools**: *Aim* to drag/click/scroll the shot line, *Scene* to orbit and zoom, and *Shot* to hold anywhere on the cloth and release to strike. One mouse does everything.
@@ -51,6 +54,9 @@ The HUD always shows the ball on, the reds left, the points left, the current br
 | Aim tool | Nudge buttons or `←` / `→` fine-tune by 0.5° (`Shift` = 2°) |
 | Aim tool | Drag the cue-ball spin dot for follow, screw or english |
 | Shot control | Cue elevation slider for jump/masse shots |
+| Ball guide chips | Click a colour to highlight all of its balls; the chip shows its point value |
+| **A− / A+** | Smaller / larger interface text (saved in this browser) |
+| Book icon or **Referee’s call** panel | Open the full ruling history |
 | Keyboard | `A` / `O` / `S` tools · `L` pin · `C` re-centre · `R` spin · `←`/`→` aim |
 
 **One mouse, no keyboard required.** Pick **Aim**, **Scene** or **Shot** from the mouse-tool switch. In Aim, drag for fine adjustment, click to move the line, or scroll for a nudge — the cue eases toward the target at a deliberately controlled speed. In Scene, the mouse moves the camera. In Shot, the aim is frozen: hold anywhere on the cloth to charge, then release. Switching **Scene → Aim** (or **Scene → Shot**) keeps the exact camera framing you set, so the view and the shot angle never jump; use the recentre button or click **Aim** again to return behind the cue. The camera holds its angle while you aim, so moving the mouse to the Strike button can never swing the table or change the shot. The balls are rendered slightly oversized with a warm rim light so every colour, including the black, stays readable on the baize.
@@ -71,6 +77,8 @@ The engine tracks the ball on as `red`, `colour`, or a specific clearance colour
 > **Foul by Player One — blue (5) was struck first, but red was on. 5 points to Player Two (the blue is worth 5). Player Two to the table. Score 0–5.**
 
 > **1 point to Player One — red potted. Break 1; now on a colour. Player One stays at the table. Score 1–0.**
+
+The **Referee’s call** panel keeps the latest ruling on screen and is clickable. Use the small book beside the shot controls — or click that panel — to open the **ruling history**, which saves the last 120 calls in `localStorage` and can be cleared from the modal.
 
 It handles:
 
@@ -148,6 +156,10 @@ THIRD_PARTY_NOTICES.md  library and font attribution
 | Frame complete | Portrait layout |
 | --- | --- |
 | ![Victory](screenshot-victory.png) | ![Mobile](screenshot-mobile.png) |
+
+| Ball guide highlight | Ruling history |
+| --- | --- |
+| ![Ball guide](screenshot-guide.png) | ![Ruling history](screenshot-rulings.png) |
 
 ## Credits
 

@@ -3,19 +3,19 @@
   "description": "The Mahogany Room \u2014 a complete, interactive 3D snooker game in the browser with 22 balls, Three.js rendering, Cannon.js physics, spin, a referee, an AI opponent and portable career stats.",
   "build": {
     "startedAt": "2026-10-31T23:45:05Z",
-    "completedAt": "2026-11-01T01:56:19Z",
-    "durationSeconds": 7874.2,
-    "durationHuman": "2h 11m 14s",
+    "completedAt": "2026-11-01T02:13:25Z",
+    "durationSeconds": 8899.7,
+    "durationHuman": "2h 28m 20s",
     "timezone": "UTC"
   },
   "tokens": {
-    "input": 978002,
-    "output": 177185,
-    "reasoning": 323948,
-    "cacheRead": 81874048,
+    "input": 995248,
+    "output": 202638,
+    "reasoning": 388118,
+    "cacheRead": 108483712,
     "cacheWrite": 1277,
-    "total": 1479135,
-    "totalWithCache": 83354460,
+    "total": 1586004,
+    "totalWithCache": 110070993,
     "note": "Snapshot from the OpenCode session record when the project was packaged. total = input + output + reasoning. Cache reads/writes are reported separately because they are a subset of context usage."
   },
   "cost": {
@@ -97,20 +97,44 @@
       "turn",
       "score"
     ],
-    "ballReadability": "Saturated 60 mm balls, brighter emissive, neutral key light, darker baize, white Fresnel rim and dark contour."
+    "ballReadability": "Saturated 60 mm balls, brighter emissive, neutral key light, darker baize, white Fresnel rim and dark contour.",
+    "ballGuide": true,
+    "ballGuidePoints": {
+      "red": 1,
+      "yellow": 2,
+      "green": 3,
+      "brown": 4,
+      "blue": 5,
+      "pink": 6,
+      "black": 7
+    },
+    "interfaceTextScale": {
+      "min": 0.85,
+      "max": 1.3,
+      "step": 0.1,
+      "persisted": true
+    },
+    "rulingHistory": {
+      "maxEntries": 120,
+      "persisted": true,
+      "openFrom": [
+        "book icon",
+        "Referee call panel"
+      ]
+    }
   },
   "source": {
     "index.html": {
-      "bytes": 16630,
-      "lines": 307
+      "bytes": 19957,
+      "lines": 341
     },
     "style.css": {
-      "bytes": 35557,
-      "lines": 1281
+      "bytes": 41407,
+      "lines": 1439
     },
     "script.js": {
-      "bytes": 127082,
-      "lines": 3383
+      "bytes": 134731,
+      "lines": 3589
     }
   },
   "artifacts": [
@@ -126,6 +150,8 @@
     "screenshot-stats.png",
     "screenshot-victory.png",
     "screenshot-mobile.png",
+    "screenshot-guide.png",
+    "screenshot-rulings.png",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
     ".nojekyll",
@@ -167,11 +193,16 @@
       "persistent Referee\u2019s call panel",
       "wrong-ball foul shows blue value and Player Two beneficiary",
       "persistent Referee call panel",
-      "colour contrast pass with rim, contour and neutral key light"
+      "colour contrast pass with rim, contour and neutral key light",
+      "ball guide highlights all balls of a colour",
+      "ball guide labels points 1\u20137",
+      "A\u2212/A+ scales UI and persists",
+      "ruling history modal opens from book and last call",
+      "ruling history clears"
     ],
     "consoleErrors": 0,
     "liveDemo": "https://somphol.github.io/snooker-3d/",
-    "liveVerifiedAt": "2026-11-01T01:56:19Z",
+    "liveVerifiedAt": "2026-11-01T02:13:25Z",
     "liveConsoleErrors": 0,
     "localConsoleErrors": 0
   },

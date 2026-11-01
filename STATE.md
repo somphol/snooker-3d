@@ -4,8 +4,8 @@
 | --- | --- |
 | Project | The Mahogany Room · 3D Snooker (`snooker-3d`) |
 | Started | 2026-10-31 23:45:05 UTC |
-| Packaged | 2026-11-01 01:56:19 UTC |
-| Duration | **2h 11m 14s** (7,874 seconds) |
+| Packaged | 2026-11-01 02:13:25 UTC |
+| Duration | **2h 28m 20s** (8,899 seconds) |
 | Harness | OpenCode 2.2.5 |
 | Model | DeepSeek V4.1 Flash (`opencode-go/deepseek-v4.1-flash`) |
 | Session | `ses_e6ba5bd0cffeNxKRA16F47omGg` |
@@ -16,25 +16,28 @@
 
 | Metric | Tokens |
 | --- | ---: |
-| Input | 978,002 |
-| Output | 177,185 |
-| Reasoning | 323,948 |
-| **Total (input + output + reasoning)** | **1,479,135** |
-| Cache read | 81,874,048 |
+| Input | 995,248 |
+| Output | 202,638 |
+| Reasoning | 388,118 |
+| **Total (input + output + reasoning)** | **1,586,004** |
+| Cache read | 108,483,712 |
 | Cache write | 1,277 |
-| Total including cache | 83,354,460 |
+| Total including cache | 110,070,993 |
 
-> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 01:56:19 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
+> Snapshot taken from the OpenCode session record when the project was packaged at 2026-11-01 02:13:25 UTC. The final commit, push, Pages check and closing response happen outside this snapshot, so the live session totals will be marginally higher. Total cost reported by the session: **$0.00**.
 
 ## What was built
 
 - A complete 22-ball 3D snooker game in three modular files:
-  - `index.html` — 16,630 bytes, 307 lines
-  - `style.css` — 35,557 bytes, 1,281 lines
-  - `script.js` — 127,082 bytes, 3,383 lines
+  - `index.html` — 19,957 bytes, 341 lines
+  - `style.css` — 41,407 bytes, 1,439 lines
+  - `script.js` — 134,731 bytes, 3,589 lines
 - A 12 ft × 6 ft table: procedural mahogany, baize, brass pocket rims, six pockets, baulk line, D, spots, legs, nameplate, hanging lamps and a club-room backdrop.
 - Cannon.js ball physics at 120 Hz with sub-stepping: ball–ball momentum transfer, cushion restitution, cloth friction, custom rolling resistance, pocket capture and off-table recovery.
 - **60 mm balls** (slightly oversized for visibility) with saturated colours, a stronger emissive lift, a neutral key light, darker baize, a white Fresnel rim and a dark contour ring, so every colour — including the black — reads against the cloth.
+- **Ball guide with points**: seven clickable colour chips labelled Red 1 pt through Black 7 pt. Clicking one highlights every active ball of that colour with a pulsing brass ring and coloured halo; clicking again clears it. Chips dim when their colour is off the table.
+- **Interface text size**: A− / A+ in the shot-control header scales all interface text from 85% to 130% and remembers the setting in `localStorage`.
+- **Ruling history**: the book icon or the Referee's call panel opens the referee's book, newest first, showing up to 120 saved calls with frame number, time, type and full explanation; the modal has a clear action.
 - **Three exclusive mouse tools**:
   - **Aim** — relative drag for fine aim, eased click-to-line, wheel nudge, Shift for ultra-fine, and double-click/padlock to pin the line.
   - **Scene** — drag to orbit and wheel/pinch to zoom, with the shot line untouched; switching Scene → Aim/Shot **preserves the exact camera framing and shot angle**.
@@ -47,7 +50,7 @@
 - A persistent **Referee's call** panel explains every score and foul: **who scored or fouled, why, the penalty value, any respots, whose turn it is and the score**. The same explanation appears in the toast and foul banner.
 - AI opponent that searches ghost-ball pots over every pocket, validates paths, falls back to a same-side safety, and plays with small human error.
 - Career statistics in `localStorage`: matches, frames, Player One/Two/Computer wins, high break, centuries and total pots, with tested JSON export and import.
-- Responsive desktop, portrait and mobile layouts; the portrait HUD exposes the three tools, the Referee's call, spin, charge and Strike.
+- Responsive desktop, portrait and mobile layouts; the portrait HUD exposes the three tools, ball guide, Referee's call, text size, spin, charge and Strike.
 - Synthesised Web Audio for cue, ball, cushion, pocket and foul sounds; no audio assets.
 
 ## Verification
@@ -66,10 +69,10 @@
   - the Aim / Scene / Shot mouse tools,
   - **Scene → Aim with camera delta 0, target delta 0 and aim delta 0**,
   - Scene → Shot keeps the framing; recentre returns to the cue view,
-  - **Referee's call explanations**:
-    - **1 point to Player One — red potted. Break 1; now on a colour. Player One stays at the table. Score 1–0.**
-    - **Foul by Player One — blue (5) was struck first, but red was on. 5 points to Player Two (the blue is worth 5). Player Two to the table. Score 0–5.**
-    - **Foul by Player One — the cue ball was potted. 4 points to Player Two (minimum penalty). Cue ball respotted in the D. Player Two to the table. Score 0–4.**
+  - **Referee's call explanations** for legal pots, blue-first fouls and cue-ball scratches,
+  - **ball guide** highlighting 15 red rings / 1 blue ring, with point labels 1–7,
+  - **A− / A+** scaling from 1.0 to 1.3 and restoring after reload,
+  - **ruling history** opening from the book and the last-call panel, persisting after reload and clearing,
   - a clean pot with the larger 60 mm balls,
   - the saturated colour / rim / contour pass.
 - **0** console errors in the final local load and **0** on the live GitHub Pages load.

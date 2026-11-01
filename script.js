@@ -52,6 +52,12 @@
   const MIN_SHOT_SPEED = 0.62;
   const STATS_KEY = 'snooker3d_stats_v1';
   const MUTE_KEY = 'snooker3d_muted';
+  const FONT_KEY = 'snooker3d_font_scale';
+  const RULINGS_KEY = 'snooker3d_rulings_v1';
+  const FONT_MIN = 0.85;
+  const FONT_MAX = 1.3;
+  const FONT_STEP = 0.1;
+  const RULINGS_MAX = 120;
 
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -73,7 +79,8 @@
     aimAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimTarget: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
     aimCamAngle: Math.atan2(-CUE_START[1], RED_APEX_X - CUE_START[0]),
-    aimFree: false,            // true = keep the Scene camera framing while aiming
+    aimFree: false,
+    highlightType: null,            // true = keep the Scene camera framing while aiming
     aimLocked: false,          // sticky aim (pin)
     power: 55,
     charging: false,
@@ -82,6 +89,7 @@
     spin: { x: 0, y: 0 },
     elevation: 4,
     soundOn: true,
+    fontScale: 1,
     frameNo: 1,
     breakOff: 0,
     frameHigh: 0,
@@ -101,6 +109,7 @@
   };
 
   let stats = defaultStats();
+  let rulingHistory = [];
   let balls = [];
   let cueBall = null;
 
@@ -157,6 +166,33 @@
     try { return localStorage.getItem(MUTE_KEY) === '1'; } catch (err) { return false; }
   }
 
+  function loadFontScale() {
+    try {
+      const raw = parseFloat(localStorage.getItem(FONT_KEY));
+      return Number.isFinite(raw) ? clamp(raw, FONT_MIN, FONT_MAX) : 1;
+    } catch (err) {
+      return 1;
+    }
+  }
+
+  function applyFontScale(scale, persist) {
+    const next = Math.round(clamp(scale, FONT_MIN, FONT_MAX) * 100) / 100;
+    app.fontScale = next;
+    document.documentElement.style.setProperty('--fs', next.toFixed(2));
+    if (dom.fontDown) dom.fontDown.disabled = next <= FONT_MIN + 0.001;
+    if (dom.fontUp) dom.fontUp.disabled = next >= FONT_MAX - 0.001;
+    if (persist) {
+      try { localStorage.setItem(FONT_KEY, next.toFixed(2)); } catch (err) { /* noop */ }
+    }
+  }
+
+  function changeFontScale(delta) {
+    const next = Math.round(clamp(app.fontScale + delta, FONT_MIN, FONT_MAX) * 100) / 100;
+    if (Math.abs(next - app.fontScale) < 0.001) return;
+    applyFontScale(next, true);
+    toast(`Text size ${Math.round(next * 100)}%`, 'info', 'Display');
+  }
+
   /* ────────────────────────────────────────────────────────────────────────
      03 · DOM
      ──────────────────────────────────────────────────────────────────────── */
@@ -178,9 +214,14 @@
     ballOn: $('ball-on'),
     redsLeft: $('reds-left'),
     pointsLeft: $('points-left'),
-    rack: $('rack'),
+    ballGuide: $('ball-guide'),
     lastCall: $('last-call'),
     lastCallText: $('last-call-text'),
+    fontDown: $('font-down'),
+    fontUp: $('font-up'),
+    rulingsBtn: $('btn-rulings'),
+    rulingsList: $('rulings-list'),
+    clearRulings: $('btn-clear-rulings'),
     aimReadout: $('aim-readout'),
     aimHint: $('aim-hint'),
     lockAimBtn: $('btn-lock-aim'),
@@ -1027,6 +1068,23 @@
     opacity: 0.45,
     depthWrite: false
   });
+  const highlightRingGeo = new THREE.TorusGeometry(R * 1.45, 0.0045, 8, 36);
+  const highlightRingMat = new THREE.MeshBasicMaterial({
+    color: 0xffdd9a,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  const highlightHaloGeo = new THREE.SphereGeometry(R * 1.1, 20, 14);
+  const highlightHaloMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide
+  });
   const ballRimGeo = new THREE.SphereGeometry(R * 1.025, 28, 20);
   const ballRimMat = new THREE.ShaderMaterial({
     uniforms: {
@@ -1084,6 +1142,16 @@
     const rim = new THREE.Mesh(ballRimGeo, ballRimMat);
     rim.renderOrder = 2;
     mesh.add(rim);
+    const halo = new THREE.Mesh(highlightHaloGeo, highlightHaloMat);
+    halo.visible = false;
+    halo.renderOrder = 3;
+    mesh.add(halo);
+    const ring = new THREE.Mesh(highlightRingGeo, highlightRingMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.0045;
+    ring.visible = false;
+    ring.renderOrder = 3;
+    scene.add(ring);
     scene.add(mesh);
 
     const body = new CANNON.Body({
@@ -1106,7 +1174,9 @@
       active: true,
       onTable: true,
       pottedThisShot: false,
-      home: [x, z]
+      home: [x, z],
+      ring,
+      halo
     };
     body.__ball = ball;
     mesh.userData.ball = ball;
@@ -2082,7 +2152,7 @@
       startZ: ball.mesh.position.z
     });
     Audio.pocket();
-    if (ball.type !== 'cue') updateRack();
+    if (ball.type !== 'cue') updateBallGuide();
   }
 
   function updatePotAnims(dt) {
@@ -2130,7 +2200,8 @@
     }).join(' and ');
   }
 
-  function setLastCall(text, kind) {
+  function setLastCall(text, kind, record) {
+    if (record !== false) recordRuling(text, kind);
     if (!dom.lastCallText) return;
     dom.lastCallText.textContent = text;
     if (dom.lastCall) {
@@ -2232,6 +2303,96 @@
     const long = `${pts} to ${shooterName} — ${detail}. Break ${rules.break}; now on ${onNow}. ${shooterName} stays at the table. Score ${score}.`;
     const short = `${pts} to ${shooterName} — ${detail}. Break ${rules.break}.`;
     return { kind: 'score', long, short };
+  }
+
+  function loadRulings() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(RULINGS_KEY) || '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter((e) => e && typeof e.text === 'string')
+        .map((e) => ({
+          time: Number(e.time) || 0,
+          frame: Number(e.frame) || 0,
+          kind: ['foul', 'score', 'info'].includes(e.kind) ? e.kind : 'info',
+          text: String(e.text).slice(0, 1200),
+          score: typeof e.score === 'string' ? e.score : ''
+        }))
+        .slice(-RULINGS_MAX);
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function saveRulings() {
+    try { localStorage.setItem(RULINGS_KEY, JSON.stringify(rulingHistory.slice(-RULINGS_MAX))); } catch (err) { /* private mode */ }
+  }
+
+  function recordRuling(text, kind) {
+    const entry = {
+      time: Date.now(),
+      frame: app.frameNo,
+      kind: ['foul', 'score', 'info'].includes(kind) ? kind : 'info',
+      text: String(text).slice(0, 1200),
+      score: `${rules.scores[0]}–${rules.scores[1]}`
+    };
+    const last = rulingHistory[rulingHistory.length - 1];
+    if (last && last.text === entry.text && last.frame === entry.frame) return;
+    rulingHistory.push(entry);
+    if (rulingHistory.length > RULINGS_MAX) rulingHistory = rulingHistory.slice(-RULINGS_MAX);
+    saveRulings();
+  }
+
+  function formatRulingTime(ms) {
+    if (!Number.isFinite(ms) || ms <= 0) return '';
+    const d = new Date(ms);
+    const now = new Date();
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return time;
+    return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
+  }
+
+  function renderRulings() {
+    if (!dom.rulingsList) return;
+    const list = dom.rulingsList;
+    list.textContent = '';
+    if (!rulingHistory.length) {
+      const empty = document.createElement('p');
+      empty.className = 'rulings-empty';
+      empty.textContent = 'No rulings yet. Take a shot, pot a ball or concede a foul and it will be written here.';
+      list.appendChild(empty);
+      return;
+    }
+    rulingHistory.slice().reverse().forEach((entry) => {
+      const item = document.createElement('div');
+      item.className = `ruling-item is-${entry.kind}`;
+      const meta = document.createElement('div');
+      meta.className = 'ruling-meta';
+      const when = document.createElement('span');
+      const time = formatRulingTime(entry.time);
+      when.textContent = `Frame ${pad2(entry.frame || app.frameNo)}${time ? ' · ' + time : ''}`;
+      const tag = document.createElement('b');
+      tag.textContent = entry.kind === 'foul' ? 'Foul' : entry.kind === 'score' ? 'Points' : 'Referee';
+      meta.append(when, tag);
+      const p = document.createElement('p');
+      p.textContent = entry.text;
+      item.append(meta, p);
+      list.appendChild(item);
+    });
+    list.scrollTop = 0;
+  }
+
+  function openRulings() {
+    renderRulings();
+    openModal('modal-rulings');
+  }
+
+  function clearRulings() {
+    if (!window.confirm('Clear the entire ruling history?')) return;
+    rulingHistory = [];
+    saveRulings();
+    renderRulings();
+    toast('Ruling history cleared', 'info', 'The referee');
   }
 
   function endShot() {
@@ -2599,12 +2760,13 @@
     app.potAnims = [];
     app.centuryThisBreak = false;
     app.frameHigh = 0;
+    app.highlightType = null;
     app.spin = { x: 0, y: 0 };
     app.power = 55;
 
     const startPlayer = count ? 1 - app.breakOff : 0;
     resetRules(startPlayer);
-    setLastCall(`${playerName(rules.current)} to break · red on.`, 'info');
+    setLastCall(`${playerName(rules.current)} to break · red on.`, 'info', false);
     if (count) {
       app.frameNo = (app.frameNo || 1) + 1;
       stats.framesPlayed++;
@@ -2685,7 +2847,7 @@
     else if (!on) { label = 'Black'; swatch = 'black'; }
     dom.ballOn.innerHTML = `<i class="swatch ${swatch}"></i><em>${label}</em>`;
 
-    updateRack();
+    updateBallGuide();
     updateStatus();
     updateShootAvailability();
     syncAimLockUI();
@@ -2709,37 +2871,62 @@
     return pts;
   }
 
-  function updateRack() {
-    if (!dom.rack.children.length) {
-      for (let i = 0; i < 15; i++) {
-        const i2 = document.createElement('i');
-        i2.style.setProperty('--ball', '#b32320');
-        i2.title = 'Red';
-        i2.dataset.type = 'red';
-        i2.dataset.index = String(i);
-        dom.rack.appendChild(i2);
-      }
-      const sep = document.createElement('span');
-      sep.className = 'rack-sep';
-      dom.rack.appendChild(sep);
-      COLOR_ORDER.forEach((t) => {
-        const i2 = document.createElement('i');
-        i2.style.setProperty('--ball', '#' + BALL_HEX[t].toString(16).padStart(6, '0'));
-        i2.title = BALL_NAMES[t];
-        i2.dataset.type = t;
-        dom.rack.appendChild(i2);
-      });
+  function updateBallGuide() {
+    if (!dom.ballGuide) return;
+    let selectedStillActive = false;
+    dom.ballGuide.querySelectorAll('[data-ball]').forEach((btn) => {
+      const type = btn.dataset.ball;
+      const active = balls.filter((b) => b.type === type && b.active).length;
+      const on = app.highlightType === type;
+      if (on && active > 0) selectedStillActive = true;
+      btn.classList.toggle('is-on', on);
+      btn.classList.toggle('is-potted', active === 0);
+      btn.disabled = active === 0;
+      btn.title = `${BALL_NAMES[type]} — ${VALUES[type]} ${VALUES[type] === 1 ? 'point' : 'points'} — ${active} left — click to highlight`;
+    });
+    if (app.highlightType && !selectedStillActive) {
+      app.highlightType = null;
+      dom.ballGuide.querySelectorAll('[data-ball]').forEach((btn) => btn.classList.remove('is-on'));
+      updateBallHighlights(performance.now());
     }
-    let ri = 0;
-    for (const el of dom.rack.children) {
-      if (el.tagName !== 'I') continue;
-      if (el.dataset.type === 'red') {
-        const ball = balls.find((b) => b.type === 'red' && b.index === ri);
-        el.classList.toggle('is-potted', !(ball && ball.active));
-        ri++;
-      } else {
-        const ball = balls.find((b) => b.type === el.dataset.type);
-        el.classList.toggle('is-potted', !(ball && ball.active));
+  }
+
+  function toggleBallHighlight(type) {
+    const count = balls.filter((b) => b.type === type && b.active).length;
+    if (!count) return;
+    app.highlightType = app.highlightType === type ? null : type;
+    updateBallGuide();
+    updateBallHighlights(performance.now());
+    if (app.highlightType) {
+      const label = type === 'red'
+        ? `${count} red${count === 1 ? '' : 's'}`
+        : `${count} ${BALL_NAMES[type].toLowerCase()} ball${count === 1 ? '' : 's'}`;
+      toast(`Highlighting ${label} · ${VALUES[type]} ${VALUES[type] === 1 ? 'point' : 'points'}`, 'info', 'Ball guide');
+    }
+  }
+
+  function updateBallHighlights(now) {
+    const type = app.highlightType;
+    if (!type) {
+      for (const b of balls) {
+        if (b.ring) b.ring.visible = false;
+        if (b.halo) b.halo.visible = false;
+      }
+      return;
+    }
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.005);
+    highlightRingMat.opacity = 0.4 + 0.35 * pulse;
+    highlightHaloMat.color.setHex(BALL_HEX[type] || 0xffe3a8);
+    highlightHaloMat.opacity = 0.07 + 0.1 * pulse;
+    for (const b of balls) {
+      if (!b.ring) continue;
+      const on = b.active && b.type === type;
+      b.ring.visible = on;
+      b.halo.visible = on;
+      if (on) {
+        b.ring.position.set(b.body.position.x, 0.0045, b.body.position.z);
+        b.ring.scale.setScalar(1 + 0.07 * pulse);
+        b.halo.scale.setScalar(1 + 0.015 * pulse);
       }
     }
   }
@@ -2932,6 +3119,7 @@
     const m = $(id);
     if (!m) return;
     if (id === 'modal-stats') refreshStatsModal();
+    if (id === 'modal-rulings') renderRulings();
     m.classList.add('open');
     m.setAttribute('aria-hidden', 'false');
   }
@@ -3076,6 +3264,7 @@
       camera.position.y += (Math.random() - 0.5) * app.shake * 0.006;
     }
 
+    updateBallHighlights(now);
     if (controls.enabled) controls.update();
     renderer.render(scene, camera);
   }
@@ -3112,6 +3301,18 @@
       takeShot();
     });
 
+    dom.fontDown.addEventListener('click', () => changeFontScale(-FONT_STEP));
+    dom.fontUp.addEventListener('click', () => changeFontScale(FONT_STEP));
+    dom.rulingsBtn.addEventListener('click', openRulings);
+    dom.clearRulings.addEventListener('click', clearRulings);
+    dom.lastCall.addEventListener('click', openRulings);
+    dom.lastCall.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openRulings();
+      }
+    });
+
     dom.lockAimBtn.addEventListener('click', () => {
       if (!isHumanTurn()) return;
       setAimLocked(!app.aimLocked);
@@ -3124,6 +3325,9 @@
 
     document.querySelectorAll('[data-tool]').forEach((btn) => {
       btn.addEventListener('click', () => setTool(btn.dataset.tool));
+    });
+    document.querySelectorAll('[data-ball]').forEach((btn) => {
+      btn.addEventListener('click', () => toggleBallHighlight(btn.dataset.ball));
     });
     document.querySelectorAll('[data-nudge]').forEach((btn) => {
       btn.addEventListener('click', () => nudgeAim(Number(btn.dataset.nudge)));
@@ -3192,8 +3396,10 @@
       if (!THREE.OrbitControls) throw new Error('OrbitControls could not be loaded from the CDN.');
 
       stats = loadStats();
+      rulingHistory = loadRulings();
       app.soundOn = !loadMute();
       document.body.classList.toggle('is-muted', !app.soundOn);
+      applyFontScale(loadFontScale(), false);
 
       dom.loaderNote.textContent = 'Polishing the mahogany…';
       dom.loaderBar.style.width = '24%';

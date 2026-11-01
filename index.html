@@ -112,10 +112,24 @@
       </div>
     </div>
 
-    <div class="rack" id="rack" aria-label="Balls remaining"></div>
+    <div class="ball-guide-wrap">
+      <div class="ball-guide-head"><span>Ball guide</span><span>Tap a colour to highlight</span></div>
+      <div class="ball-guide" id="ball-guide" aria-label="Ball colour and points guide">
+        <button type="button" class="ball-chip" data-ball="red" aria-label="Red, 1 point, highlight all red balls" title="Red — 1 point — highlight all red balls"><i class="swatch red"></i><span>Red</span><b>1</b></button>
+        <button type="button" class="ball-chip" data-ball="yellow" aria-label="Yellow, 2 points, highlight all yellow balls" title="Yellow — 2 points — highlight all yellow balls"><i class="swatch yellow"></i><span>Yellow</span><b>2</b></button>
+        <button type="button" class="ball-chip" data-ball="green" aria-label="Green, 3 points, highlight all green balls" title="Green — 3 points — highlight all green balls"><i class="swatch green"></i><span>Green</span><b>3</b></button>
+        <button type="button" class="ball-chip" data-ball="brown" aria-label="Brown, 4 points, highlight all brown balls" title="Brown — 4 points — highlight all brown balls"><i class="swatch brown"></i><span>Brown</span><b>4</b></button>
+        <button type="button" class="ball-chip" data-ball="blue" aria-label="Blue, 5 points, highlight all blue balls" title="Blue — 5 points — highlight all blue balls"><i class="swatch blue"></i><span>Blue</span><b>5</b></button>
+        <button type="button" class="ball-chip" data-ball="pink" aria-label="Pink, 6 points, highlight all pink balls" title="Pink — 6 points — highlight all pink balls"><i class="swatch pink"></i><span>Pink</span><b>6</b></button>
+        <button type="button" class="ball-chip" data-ball="black" aria-label="Black, 7 points, highlight all black balls" title="Black — 7 points — highlight all black balls"><i class="swatch black"></i><span>Black</span><b>7</b></button>
+      </div>
+    </div>
 
-    <div class="last-call" id="last-call" aria-live="polite">
-      <span class="last-call-kicker">Referee's call</span>
+    <div class="last-call" id="last-call" role="button" tabindex="0" title="Open ruling history" aria-live="polite">
+      <div class="last-call-head">
+        <span class="last-call-kicker">Referee's call</span>
+        <span class="last-call-more">History →</span>
+      </div>
       <p id="last-call-text">Player One to break · red on.</p>
     </div>
   </aside>
@@ -124,7 +138,14 @@
   <aside class="panel controls" id="controls">
     <div class="panel-head">
       <span>Shot control</span>
-      <button class="mini-help" id="btn-help" title="Quick guide">?</button>
+      <div class="panel-head-actions">
+        <button class="mini-help font-step" id="font-down" title="Smaller text" aria-label="Smaller text">A−</button>
+        <button class="mini-help font-step" id="font-up" title="Larger text" aria-label="Larger text">A+</button>
+        <button class="mini-help" id="btn-rulings" title="Ruling history" aria-label="Ruling history">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 004 21.5v-16z"/><path d="M4 18.5A2.5 2.5 0 016.5 16H20"/></svg>
+        </button>
+        <button class="mini-help" id="btn-help" title="Quick guide">?</button>
+      </div>
     </div>
 
     <section class="control-block">
@@ -246,6 +267,19 @@
         <span><b>Double-click</b> pin aim</span>
         <span><b>Click Strike</b> or hold charge</span>
         <span><kbd>R</kbd> reset spin</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="modal-backdrop" id="modal-rulings" aria-hidden="true">
+    <article class="modal rulings-modal" role="dialog" aria-modal="true" aria-labelledby="rulings-title">
+      <button class="modal-close" data-close="modal-rulings" aria-label="Close">×</button>
+      <p class="eyebrow">The referee's book</p>
+      <h2 id="rulings-title">Ruling history</h2>
+      <p class="rulings-intro">Every point, miss and foul from this table, newest first.</p>
+      <div class="rulings-list" id="rulings-list"></div>
+      <div class="rulings-actions">
+        <button class="ghost-btn" id="btn-clear-rulings">Clear history</button>
       </div>
     </article>
   </div>

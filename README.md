@@ -150,6 +150,13 @@ The renderer draws the table in metres. The balls are a slightly oversized 60 mm
 index.html              the club-room HUD and game shell
 style.css               mahogany/brass design system and responsive layout
 script.js               Three.js scene, Cannon physics, referee, AI, UI
+AGENTS.md               maintainer handoff
+CHANGELOG.md            change history
+docs/ARCHITECTURE.md    file map, physics, referee, AI, change guide
+docs/REPRODUCTION.md    rebuild and acceptance checks
+docs/DEPLOYMENT.md      Pages hosting, CDN dependencies, rollback
+docs/TESTING.md         evidence, headless checks, manual matrix
+docs/social-card.png    1200 × 630 link preview
 favicon.svg             the house crest
 screenshot*.png         rendered stills used by this README
 state.json              build duration and OpenCode token accounting
@@ -195,6 +202,11 @@ documentation fixes alike. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and th
 | Document | Purpose |
 | --- | --- |
 | [README.md](README.md) | Overview, setup, controls, and architecture |
+| [AGENTS.md](AGENTS.md) | Handoff for the next maintainer or agent |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | File map, physics, shot lifecycle, referee, AI, HUD |
+| [docs/REPRODUCTION.md](docs/REPRODUCTION.md) | How to rebuild the project from scratch |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Pages hosting, CDN dependencies, rollback |
+| [docs/TESTING.md](docs/TESTING.md) | Evidence, headless checks, manual test matrix |
 | [CHANGELOG.md](CHANGELOG.md) | Notable changes and release history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Local workflow, constraints, and pull request checks |
 | [SECURITY.md](SECURITY.md) | Supported versions and private vulnerability reporting |
